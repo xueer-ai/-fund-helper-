@@ -1,103 +1,34 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { FUNDS, DISCLAIMER } from '@/lib/constants';
+import { useState, useEffect, useCallback } from 'react';
+import { DISCLAIMER } from '@/lib/constants';
+import { useFundData, useScanResult } from '@/lib/hooks';
 import type { BuySignal, FullPositionCheck } from '@/lib/types';
 
 export function BuySignalPanel() {
-  const [signals, setSignals] = useState<BuySignal[]>([]);
-  const [fullCheck, setFullCheck] = useState<FullPositionCheck>({
-    consecutive3Up: false,
-    volume15x: false,
-    maTurnUp: false,
-    star50Above1200: false,
-    metCount: 0,
-    isReady: false,
-  });
-  const [star50, setStar50] = useState(1050);
+  const { fundData, lastUpdate, refresh: refreshFunds } = useFundData(true, 60000);
+  const { scanResult, loading, rescan } = useScanResult(true, 120000);
   const [lastScan, setLastScan] = useState('');
 
-  useEffect(() => {
-    scanSignals();
-  }, []);
+  const signals: BuySignal[] = scanResult?.signals || [];
+  const fullCheck: FullPositionCheck = scanResult?.fullPositionCheck || {
+    consecutive3Up: false, volume15x: false, maTurnUp: false, star50Above1200: false, metCount: 0, isReady: false,
+  };
 
-  const scanSignals = () => {
+  // 从基金数据中获取科创50
+  const star50Fund = fundData.find((f) => f.code === '科创50');
+  const star50 = star50Fund?.nav || 1050;
+
+  const doScan = useCallback(() => {
     const now = new Date();
     setLastScan(now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    refreshFunds();
+    rescan();
+  }, [refreshFunds, rescan]);
 
-    const baseNavs: Record<string, number> = {
-      '159140': 1.42,
-      '159142': 1.38,
-      '022364': 5.95,
-    };
-    const star50Val = Math.round(1050 + (Math.random() - 0.5) * 100);
-    setStar50(star50Val);
-
-    const allSignals: BuySignal[] = [];
-
-    // 159140 三档
-    const nav159140 = Number((baseNavs['159140'] * (1 + (Math.random() - 0.5) * 0.03)).toFixed(4));
-    allSignals.push({
-      fundCode: '159140', tier: 1, tierName: '黄金坑第一买点',
-      threshold: 1.37, currentNav: nav159140, isTriggered: nav159140 <= 1.37,
-      positionRatio: '12%（2-3天买入）', description: '回调约20%，分2-3天买入总计划仓位12%',
-      knowledgeLink: '分批建仓铁律',
-    });
-    allSignals.push({
-      fundCode: '159140', tier: 2, tierName: '钻石坑第二买点',
-      threshold: 1.28, currentNav: nav159140, isTriggered: nav159140 <= 1.28,
-      positionRatio: '12%（一次性买入）', description: '回调约25%，全年超跌机会，一次性买入12%总仓位',
-      knowledgeLink: '历史极端行情应对',
-    });
-
-    // 022364 三档
-    const nav022364 = Number((baseNavs['022364'] * (1 + (Math.random() - 0.5) * 0.03)).toFixed(4));
-    allSignals.push({
-      fundCode: '022364', tier: 1, tierName: '黄金坑第一买点',
-      threshold: 5.68, currentNav: nav022364, isTriggered: nav022364 <= 5.68,
-      positionRatio: '6%（5.85预埋2%→补满6%）', description: '回调约20%，5.85预埋2%到位补满6%尾盘操作',
-      knowledgeLink: '不见兔子不撒鹰',
-    });
-    allSignals.push({
-      fundCode: '022364', tier: 2, tierName: '钻石坑第二买点',
-      threshold: 5.33, currentNav: nav022364, isTriggered: nav022364 <= 5.33,
-      positionRatio: '6%', description: '回调约25%，同步买入6%维持4:2仓位比例',
-      knowledgeLink: '历史极端行情应对',
-    });
-
-    // 159142 替代
-    const nav159142 = Number((baseNavs['159142'] * (1 + (Math.random() - 0.5) * 0.03)).toFixed(4));
-    allSignals.push({
-      fundCode: '159142', tier: 1, tierName: '替代买点',
-      threshold: 1.32, currentNav: nav159142, isTriggered: nav159142 <= 1.32,
-      positionRatio: '12%（同159140）', description: '替代标的，仓位与159140一致',
-      knowledgeLink: '标的替代逻辑',
-    });
-
-    // 第三档：企稳满仓
-    const check: FullPositionCheck = {
-      consecutive3Up: Math.random() > 0.7,
-      volume15x: Math.random() > 0.8,
-      maTurnUp: Math.random() > 0.65,
-      star50Above1200: star50Val > 1200,
-      metCount: 0,
-      isReady: false,
-    };
-    check.metCount = [check.consecutive3Up, check.volume15x, check.maTurnUp, check.star50Above1200].filter(Boolean).length;
-    check.isReady = check.metCount >= 2;
-    setFullCheck(check);
-
-    if (check.isReady) {
-      allSignals.push({
-        fundCode: '159140+022364', tier: 3, tierName: '企稳满仓第三买点',
-        threshold: 0, currentNav: 0, isTriggered: true,
-        positionRatio: '24%（2日补齐）', description: `4项指标达标${check.metCount}/4（≥2项），分2日补齐剩余24%总计划仓位`,
-        knowledgeLink: '趋势确认理论',
-      });
-    }
-
-    setSignals(allSignals);
-  };
+  useEffect(() => {
+    doScan();
+  }, [doScan]);
 
   const tierColors: Record<number, string> = {
     1: 'border-amber/40 bg-amber/5',
@@ -119,13 +50,17 @@ export function BuySignalPanel() {
       <div className="flex items-center justify-between bg-card-bg rounded-lg p-4 border border-border">
         <div>
           <h2 className="text-sm font-medium text-foreground">三档买点实时检测</h2>
-          <p className="text-[10px] text-muted-foreground mt-0.5">上次扫描：{lastScan || '待扫描'}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            上次扫描：{lastScan || scanResult?.scanTime?.split('T')[1]?.split('.')[0] || '待扫描'}
+            {lastUpdate && <span className="ml-2">数据更新：{lastUpdate}</span>}
+          </p>
         </div>
         <button
-          onClick={scanSignals}
-          className="px-4 py-2 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          onClick={doScan}
+          disabled={loading}
+          className="px-4 py-2 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
-          重新扫描
+          {loading ? '扫描中...' : '重新扫描'}
         </button>
       </div>
 
@@ -169,7 +104,9 @@ export function BuySignalPanel() {
                     {s.currentNav > 0 && (
                       <div>
                         <span className="text-[9px] text-muted-foreground">当前净值</span>
-                        <p className="text-xs font-mono text-foreground">{s.currentNav.toFixed(4)}</p>
+                        <p className={`text-xs font-mono ${s.isTriggered ? 'text-profit' : 'text-foreground'}`}>
+                          {s.currentNav.toFixed(4)}
+                        </p>
                       </div>
                     )}
                     <div>
@@ -196,7 +133,7 @@ export function BuySignalPanel() {
             { key: 'consecutive3Up', label: '连3阳线', val: fullCheck.consecutive3Up },
             { key: 'volume15x', label: '成交量1.5x', val: fullCheck.volume15x },
             { key: 'maTurnUp', label: '5/3日均线拐头', val: fullCheck.maTurnUp },
-            { key: 'star50Above1200', label: `科创50站稳1200`, val: fullCheck.star50Above1200 },
+            { key: 'star50Above1200', label: '科创50站稳1200', val: fullCheck.star50Above1200 },
           ].map((item) => (
             <div key={item.key} className={`p-3 rounded border text-center ${
               item.val ? 'border-profit/50 bg-profit/5' : 'border-border bg-muted/10'
@@ -215,7 +152,7 @@ export function BuySignalPanel() {
               {fullCheck.metCount}/4 {fullCheck.isReady ? '✓ 可满仓' : '(需≥2项)'}
             </span>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-1">科创50当前：<span className="font-mono text-foreground">{star50}</span> 点</p>
+          <p className="text-[10px] text-muted-foreground mt-1">科创50当前：<span className="font-mono text-foreground">{star50 > 0 ? star50.toFixed(0) : '--'}</span> 点</p>
         </div>
       </div>
 

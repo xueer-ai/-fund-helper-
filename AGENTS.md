@@ -15,31 +15,48 @@
 ```
 ├── src/
 │   ├── app/
-│   │   ├── api/chat/route.ts    # LLM对话API（SSE流式输出）
-│   │   ├── globals.css          # 全局样式（深色交易室主题）
-│   │   ├── layout.tsx           # 根布局
-│   │   └── page.tsx             # 主页面（标签页路由）
+│   │   ├── api/
+│   │   │   ├── chat/route.ts       # LLM对话API（SSE流式输出）
+│   │   │   ├── fund-data/route.ts  # 基金净值数据API（真实数据+fallback）
+│   │   │   ├── scan/route.ts       # 信号扫描API（买点/全量/风控）
+│   │   │   └── scheduler/route.ts  # 定时调度API（学习/严选/状态）
+│   │   ├── globals.css             # 全局样式（深色交易室主题）
+│   │   ├── layout.tsx              # 根布局
+│   │   └── page.tsx                # 主页面（标签页路由）
 │   ├── components/
-│   │   ├── sidebar.tsx          # 侧边栏（导航+周期倒计时+快捷指令）
-│   │   ├── dashboard-overview.tsx # 总览仪表盘
-│   │   ├── buy-signal-panel.tsx # 三档买点检测
-│   │   ├── portfolio-panel.tsx  # 持仓台账
-│   │   ├── learning-panel.tsx   # 源哥言商学习模块
-│   │   ├── risk-alert-panel.tsx # 风控预警
-│   │   └── command-panel.tsx    # 交互指令+AI对话
+│   │   ├── sidebar.tsx             # 侧边栏（导航+周期倒计时+快捷指令）
+│   │   ├── dashboard-overview.tsx  # 总览仪表盘（自动刷新）
+│   │   ├── buy-signal-panel.tsx    # 三档买点检测（自动扫描）
+│   │   ├── portfolio-panel.tsx     # 持仓台账
+│   │   ├── learning-panel.tsx      # 源哥言商学习模块
+│   │   ├── risk-alert-panel.tsx    # 风控预警（自动扫描）
+│   │   └── command-panel.tsx       # 交互指令+AI对话
 │   └── lib/
-│       ├── types.ts             # 核心类型定义
-│       ├── constants.ts         # 基金常量/铁律/周期理论
-│       └── utils.ts             # 通用工具函数
+│       ├── types.ts                # 核心类型定义
+│       ├── constants.ts            # 基金常量/铁律/周期理论
+│       ├── hooks.ts                # 自定义hooks（useFundData自动刷新）
+│       └── utils.ts                # 通用工具函数
 ```
 
 ## 核心功能模块
-1. **总览仪表盘**: 8只基金净值矩阵 + AI仓位仪表 + 信号/预警摘要
-2. **买点检测**: 三档阈值(黄金坑/钻石坑/企稳满仓)实时对照 + 满仓4项指标复核
+1. **总览仪表盘**: 8只基金净值矩阵 + AI仓位仪表 + 信号/预警摘要 + 自动刷新(30s)
+2. **买点检测**: 三档阈值(黄金坑/钻石坑/企稳满仓)实时对照 + 满仓4项指标复核 + 自动扫描
 3. **持仓台账**: 4只自有持仓明细 + 半年周期特别提示 + 操作记录
 4. **源哥言商学习**: 3时段推送(早间周期/午间铁律/收盘案例) + 测验 + 进度追踪
-5. **风控预警**: 三级预警(常规/黄色/红色) + 处置方案 + 知识点关联
+5. **风控预警**: 三级预警(常规/黄色/红色) + 处置方案 + 知识点关联 + 自动扫描
 6. **交互指令**: 13条快捷指令 + LLM自由对话（SSE流式输出）
+7. **自动监测**: 工作日定时扫描买点/风控 + 浏览器通知推送 + 周期倒计时
+
+## API接口
+- `GET /api/fund-data?code=159140` — 单只基金净值
+- `GET /api/fund-data?all=1` — 全量8只基金净值
+- `GET /api/scan?type=buy` — 买点信号扫描
+- `GET /api/scan?type=all` — 全量扫描(净值+信号+风控)
+- `GET /api/scheduler?action=status` — 当前调度状态
+- `GET /api/scheduler?action=morning_learning` — 早间学习内容
+- `GET /api/scheduler?action=noon_review` — 午间铁律复习
+- `GET /api/scheduler?action=close_learning` — 收盘学习复盘
+- `POST /api/chat` — LLM对话(SSE流式)
 
 ## 关键业务规则
 - 免责声明：每条回复首行强制固定

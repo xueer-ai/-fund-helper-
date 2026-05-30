@@ -2,78 +2,67 @@
 
 import { useState, useEffect } from 'react';
 import { DISCLAIMER } from '@/lib/constants';
+import { useScanResult, useNotification } from '@/lib/hooks';
 import type { Alert, AlertLevel } from '@/lib/types';
 
 export function RiskAlertPanel() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const { scanResult, loading, rescan } = useScanResult(true, 120000);
+  const { notify, permission, requestPermission } = useNotification();
   const [filterLevel, setFilterLevel] = useState<AlertLevel | 'all'>('all');
+  const [prevRedCount, setPrevRedCount] = useState(0);
 
+  const alerts: Alert[] = scanResult?.alerts || [];
+
+  // 红色预警自动通知
   useEffect(() => {
-    // 生成模拟预警数据
-    const mockAlerts: Alert[] = [
-      {
-        id: '1',
-        level: 'yellow',
-        title: '平安半导体浮亏逼近20%警戒线',
-        message: '当前浮亏-10.70%，距离20%止损线还有约9.3%空间。若科创50跌破1200点，需减仓50%。',
-        fundCode: '平安半导体',
-        timestamp: new Date(),
-        action: '暂停加仓 → 科创50破1200减仓50% → 浮亏达20%强制止损',
-        knowledgeLink: '价格止损铁律',
-      },
-      {
-        id: '2',
-        level: 'normal',
-        title: '华夏芯片止盈提醒',
-        message: '当前浮盈51.61%，每次拉升5%-8%触发分批减仓。建议锁定40%-60%基准收益，保留小底仓博弈国庆窗口。',
-        fundCode: '华夏芯片',
-        timestamp: new Date(),
-        action: '拉升5%-8%时减仓1/3 → 再拉升减1/3 → 保留底仓',
-        knowledgeLink: '财富变现与流动性管理',
-      },
-      {
-        id: '3',
-        level: 'normal',
-        title: '宝盈备用金不加仓铁律',
-        message: '半年内禁止追加资金，仅做应急备用金。极端风险时优先赎回回笼资金。',
-        fundCode: '宝盈转型',
-        timestamp: new Date(),
-        action: '不操作 → 极端风险时优先赎回',
-        knowledgeLink: '现金财富守恒定律',
-      },
-      {
-        id: '4',
-        level: 'normal',
-        title: '博时新能源底仓规则',
-        message: '非AI赛道分散底仓，无行情不操作。钻石坑变现需等159140跌至1.28超跌点位。',
-        fundCode: '博时新能源',
-        timestamp: new Date(),
-        action: '不操作 → 159140跌至1.28可赎回加仓主线',
-        knowledgeLink: '机会优先级排序',
-      },
-      {
-        id: '5',
-        level: 'yellow',
-        title: '半年周期进度提醒',
-        message: '距2026国庆止盈窗口剩余约120天，距11月时间止损节点约180天。需提前规划分批止盈节奏。',
-        timestamp: new Date(),
-        action: '制定国庆前分批止盈计划 → 11月前完成止损收尾',
-        knowledgeLink: '时间止损铁律',
-      },
-      {
-        id: '6',
-        level: 'red',
-        title: '极端风险预案（模拟）',
-        message: '若油价破90美元或美联储加息50bp，触发三级红色预警。需立即赎回宝盈/新能源，AI总仓位下调至30%以内。',
-        timestamp: new Date(),
-        action: '1.赎回宝盈转型 → 2.赎回博时新能源 → 3.AI仓位压至30% → 4.推送源哥极端风险应对学习',
-        knowledgeLink: '极端行情应对',
-      },
-    ];
-    setAlerts(mockAlerts);
-  }, []);
+    const redCount = alerts.filter((a) => a.level === 'red').length;
+    if (redCount > prevRedCount && prevRedCount >= 0) {
+      const newRedAlerts = alerts.filter((a) => a.level === 'red').slice(prevRedCount);
+      for (const alert of newRedAlerts) {
+        notify('红色紧急预警', `${alert.title}: ${alert.message}`, `alert_red_${alert.id}`);
+      }
+    }
+    setPrevRedCount(redCount);
+  }, [alerts, prevRedCount, notify]);
 
-  const filteredAlerts = filterLevel === 'all' ? alerts : alerts.filter((a) => a.level === filterLevel);
+  // 静态风控铁律预警（始终展示）
+  const staticAlerts: Alert[] = [
+    {
+      id: 'static_baoying',
+      level: 'normal',
+      title: '宝盈备用金不加仓铁律',
+      message: '半年内禁止追加资金，仅做应急备用金。极端风险时优先赎回回笼资金。',
+      fundCode: '宝盈转型',
+      timestamp: new Date(),
+      action: '不操作 → 极端风险时优先赎回',
+      knowledgeLink: '现金财富守恒定律',
+    },
+    {
+      id: 'static_boshi',
+      level: 'normal',
+      title: '博时新能源底仓规则',
+      message: '非AI赛道分散底仓，无行情不操作。钻石坑变现需等159140跌至1.28超跌点位。',
+      fundCode: '博时新能源',
+      timestamp: new Date(),
+      action: '不操作 → 159140跌至1.28可赎回加仓主线',
+      knowledgeLink: '机会优先级排序',
+    },
+    {
+      id: 'static_extreme',
+      level: 'red',
+      title: '极端风险预案（待触发）',
+      message: '若油价破90美元或美联储加息50bp，触发三级红色预警。需立即赎回宝盈/新能源，AI总仓位下调至30%以内。',
+      timestamp: new Date(),
+      action: '1.赎回宝盈转型 → 2.赎回博时新能源 → 3.AI仓位压至30% → 4.推送源哥极端风险应对学习',
+      knowledgeLink: '极端行情应对',
+    },
+  ];
+
+  // 合并动态和静态预警（去重）
+  const dynamicIds = new Set(alerts.map((a) => a.id));
+  const allAlerts = [...alerts, ...staticAlerts.filter((a) => !dynamicIds.has(a.id))];
+
+  const filteredAlerts = filterLevel === 'all' ? allAlerts : allAlerts.filter((a) => a.level === filterLevel);
 
   const levelColors: Record<AlertLevel, { border: string; bg: string; badge: string; label: string }> = {
     normal: { border: 'border-profit/30', bg: 'bg-profit/5', badge: 'bg-profit/20 text-profit', label: '一级常规' },
@@ -90,6 +79,14 @@ export function RiskAlertPanel() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-medium text-foreground">分级预警机制</h2>
           <div className="flex items-center gap-2">
+            {permission !== 'granted' && (
+              <button
+                onClick={requestPermission}
+                className="text-[10px] px-2 py-1 rounded bg-amber/20 text-amber hover:bg-amber/30 transition-colors mr-2"
+              >
+                开启推送通知
+              </button>
+            )}
             {(['all', 'normal', 'yellow', 'red'] as const).map((level) => (
               <button
                 key={level}
@@ -100,7 +97,7 @@ export function RiskAlertPanel() {
               >
                 {level === 'all' ? '全部' : level === 'normal' ? '常规' : level === 'yellow' ? '黄色' : '红色'}
                 {level !== 'all' && (
-                  <span className="ml-1">({alerts.filter((a) => a.level === level).length})</span>
+                  <span className="ml-1">({allAlerts.filter((a) => a.level === level).length})</span>
                 )}
               </button>
             ))}
@@ -110,17 +107,23 @@ export function RiskAlertPanel() {
         {/* 预警统计 */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="p-3 rounded bg-profit/5 border border-profit/20 text-center">
-            <p className="text-lg font-mono font-bold text-profit">{alerts.filter((a) => a.level === 'normal').length}</p>
+            <p className="text-lg font-mono font-bold text-profit">{allAlerts.filter((a) => a.level === 'normal').length}</p>
             <p className="text-[10px] text-muted-foreground">一级常规</p>
           </div>
           <div className="p-3 rounded bg-amber/5 border border-amber/20 text-center">
-            <p className="text-lg font-mono font-bold text-amber">{alerts.filter((a) => a.level === 'yellow').length}</p>
+            <p className="text-lg font-mono font-bold text-amber">{allAlerts.filter((a) => a.level === 'yellow').length}</p>
             <p className="text-[10px] text-muted-foreground">二级黄色</p>
           </div>
           <div className="p-3 rounded bg-loss/5 border border-loss/20 text-center">
-            <p className="text-lg font-mono font-bold text-loss">{alerts.filter((a) => a.level === 'red').length}</p>
+            <p className="text-lg font-mono font-bold text-loss">{allAlerts.filter((a) => a.level === 'red').length}</p>
             <p className="text-[10px] text-muted-foreground">三级红色</p>
           </div>
+        </div>
+
+        {/* 动态扫描状态 */}
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+          <span>{loading ? '扫描中...' : scanResult ? `上次扫描：${scanResult.scanTime?.split('T')[1]?.split('.')[0] || '--'}` : '待扫描'}</span>
+          <button onClick={rescan} className="text-indigo hover:underline">重新扫描</button>
         </div>
       </div>
 
