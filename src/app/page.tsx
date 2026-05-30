@@ -1,33 +1,104 @@
-import type { Metadata } from 'next';
-import Image from 'next/image';
+'use client';
 
-export const metadata: Metadata = {
-  title: '扣子编程 - AI 开发伙伴',
-  description: '扣子编程，你的 AI 开发伙伴已就位',
-};
+import { useState, useEffect } from 'react';
+import { DISCLAIMER } from '@/lib/constants';
+import type { CommandType, TabId } from '@/lib/types';
+import { Sidebar } from '@/components/sidebar';
+import { DashboardOverview } from '@/components/dashboard-overview';
+import { BuySignalPanel } from '@/components/buy-signal-panel';
+import { PortfolioPanel } from '@/components/portfolio-panel';
+import { LearningPanel } from '@/components/learning-panel';
+import { RiskAlertPanel } from '@/components/risk-alert-panel';
+import { CommandPanel } from '@/components/command-panel';
+
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'overview', label: '总览仪表盘' },
+  { id: 'buy', label: '买点检测' },
+  { id: 'portfolio', label: '持仓台账' },
+  { id: 'learning', label: '源哥言商学习' },
+  { id: 'risk', label: '风控预警' },
+  { id: 'command', label: '交互指令' },
+];
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [currentTime, setCurrentTime] = useState<string>('');
+  const [isMarketDay, setIsMarketDay] = useState(false);
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleString('zh-CN', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false,
+      }));
+      const day = now.getDay();
+      setIsMarketDay(day >= 1 && day <= 5);
+    };
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleCommand = (cmd: CommandType) => {
+    if (cmd === 'buy_check') setActiveTab('buy');
+    else if (cmd === 'full_portfolio' || cmd === 'update_ledger' || cmd === 'holding_analysis') setActiveTab('portfolio');
+    else if (cmd === 'learning' || cmd === 'learning_progress' || cmd === 'knowledge_query') setActiveTab('learning');
+    else if (cmd === 'risk_overview' || cmd === 'risk_rules') setActiveTab('risk');
+    else if (cmd === 'yanxuan' || cmd === 'weekly_report' || cmd === 'full_check' || cmd === 'cycle_hint') setActiveTab('command');
+    else setActiveTab('command');
+  };
+
   return (
-    <div className="flex h-full items-center justify-center bg-background text-foreground transition-colors duration-300 dark:bg-background dark:text-foreground overflow-hidden min-h-screen">
-      {/* 主容器 */}
-      <main className="flex w-full h-full max-w-3xl flex-col items-center justify-center px-16 py-32 sm:items-center">
-        <div className="flex flex-col items-center justify-between gap-4">
-           <Image
-            src="https://lf-coze-web-cdn.coze.cn/obj/eden-cn/lm-lgvj/ljhwZthlaukjlkulzlp/coze-coding/icon/coze-coding.gif"
-            alt="扣子编程 Logo"
-            width={156}
-            height={130}
-          />
-          <div>
-            <div className="flex flex-col items-center gap-2 text-center sm:items-center sm:text-center">
-              <h1 className="max-w-xl text-base font-semibold leading-tight tracking-tight text-foreground dark:text-foreground">
-                应用开发中
-              </h1>
-              <p className="max-w-2xl text-sm leading-8 text-muted-foreground dark:text-muted-foreground">
-                请稍后，页面即将呈现
-              </p>
-            </div>
+    <div className="flex h-screen w-screen overflow-hidden bg-deep-bg text-foreground">
+      {/* 侧边栏 */}
+      <Sidebar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onCommand={handleCommand}
+        currentTime={currentTime}
+        isMarketDay={isMarketDay}
+      />
+
+      {/* 主内容区 */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* 顶部免责声明 + 时间 */}
+        <header className="flex items-center justify-between px-6 py-2 border-b border-border bg-deep-bg/80 backdrop-blur-sm shrink-0">
+          <p className="text-xs text-amber/90 font-medium tracking-wide">{DISCLAIMER}</p>
+          <div className="flex items-center gap-4">
+            <span className={`text-xs px-2 py-0.5 rounded ${isMarketDay ? 'bg-profit/20 text-profit' : 'bg-muted text-muted-foreground'}`}>
+              {isMarketDay ? '交易日' : '休市日'}
+            </span>
+            <span className="text-xs text-muted-foreground font-mono">{currentTime}</span>
           </div>
+        </header>
+
+        {/* 标签栏 */}
+        <nav className="flex items-center gap-1 px-6 py-2 border-b border-border shrink-0">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-primary/20 text-primary font-medium'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* 内容区 */}
+        <div className="flex-1 overflow-auto p-6">
+          {activeTab === 'overview' && <DashboardOverview />}
+          {activeTab === 'buy' && <BuySignalPanel />}
+          {activeTab === 'portfolio' && <PortfolioPanel />}
+          {activeTab === 'learning' && <LearningPanel />}
+          {activeTab === 'risk' && <RiskAlertPanel />}
+          {activeTab === 'command' && <CommandPanel />}
         </div>
       </main>
     </div>

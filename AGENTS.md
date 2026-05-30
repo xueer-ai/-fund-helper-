@@ -1,65 +1,56 @@
-# 项目上下文
+# AGENTS.md - 源哥AI基金监控助手
 
-### 版本技术栈
+## 项目概览
+源哥AI基金每日建仓 & 全持仓监控预警助手（含源哥言商每日学习模块），是一个基于 Next.js 16 的全栈 Web 应用。
 
+## 版本技术栈
 - **Framework**: Next.js 16 (App Router)
 - **Core**: React 19
 - **Language**: TypeScript 5
-- **UI 组件**: shadcn/ui (基于 Radix UI)
-- **Styling**: Tailwind CSS 4
+- **UI**: shadcn/ui + Tailwind CSS 4
+- **LLM**: coze-coding-dev-sdk (doubao-seed-2-0-lite-260215)
+- **数据库**: Supabase (预留)
 
 ## 目录结构
-
 ```
-├── public/                 # 静态资源
-├── scripts/                # 构建与启动脚本
-│   ├── build.sh            # 构建脚本
-│   ├── dev.sh              # 开发环境启动脚本
-│   ├── prepare.sh          # 预处理脚本
-│   └── start.sh            # 生产环境启动脚本
 ├── src/
-│   ├── app/                # 页面路由与布局
-│   ├── components/ui/      # Shadcn UI 组件库
-│   ├── hooks/              # 自定义 Hooks
-│   ├── lib/                # 工具库
-│   │   └── utils.ts        # 通用工具函数 (cn)
-│   └── server.ts           # 自定义服务端入口
-├── next.config.ts          # Next.js 配置
-├── package.json            # 项目依赖管理
-└── tsconfig.json           # TypeScript 配置
+│   ├── app/
+│   │   ├── api/chat/route.ts    # LLM对话API（SSE流式输出）
+│   │   ├── globals.css          # 全局样式（深色交易室主题）
+│   │   ├── layout.tsx           # 根布局
+│   │   └── page.tsx             # 主页面（标签页路由）
+│   ├── components/
+│   │   ├── sidebar.tsx          # 侧边栏（导航+周期倒计时+快捷指令）
+│   │   ├── dashboard-overview.tsx # 总览仪表盘
+│   │   ├── buy-signal-panel.tsx # 三档买点检测
+│   │   ├── portfolio-panel.tsx  # 持仓台账
+│   │   ├── learning-panel.tsx   # 源哥言商学习模块
+│   │   ├── risk-alert-panel.tsx # 风控预警
+│   │   └── command-panel.tsx    # 交互指令+AI对话
+│   └── lib/
+│       ├── types.ts             # 核心类型定义
+│       ├── constants.ts         # 基金常量/铁律/周期理论
+│       └── utils.ts             # 通用工具函数
 ```
 
-- 项目文件（如 app 目录、pages 目录、components 等）默认初始化到 `src/` 目录下。
+## 核心功能模块
+1. **总览仪表盘**: 8只基金净值矩阵 + AI仓位仪表 + 信号/预警摘要
+2. **买点检测**: 三档阈值(黄金坑/钻石坑/企稳满仓)实时对照 + 满仓4项指标复核
+3. **持仓台账**: 4只自有持仓明细 + 半年周期特别提示 + 操作记录
+4. **源哥言商学习**: 3时段推送(早间周期/午间铁律/收盘案例) + 测验 + 进度追踪
+5. **风控预警**: 三级预警(常规/黄色/红色) + 处置方案 + 知识点关联
+6. **交互指令**: 13条快捷指令 + LLM自由对话（SSE流式输出）
 
-## 包管理规范
-
-**仅允许使用 pnpm** 作为包管理器，**严禁使用 npm 或 yarn**。
-**常用命令**：
-- 安装依赖：`pnpm add <package>`
-- 安装开发依赖：`pnpm add -D <package>`
-- 安装所有依赖：`pnpm install`
-- 移除依赖：`pnpm remove <package>`
+## 关键业务规则
+- 免责声明：每条回复首行强制固定
+- AI仓位上限：60%
+- 三档买点：159140(1.37/1.28)、022364(5.68/5.33)、159142(1.32)
+- 半年周期：2026.5.29-11月（布局→国庆止盈→11月止损→收尾）
+- 风控铁律：3-3-4/追高拦截/浮亏20%止损/6月时间止损/极端风控
 
 ## 开发规范
-
-### 编码规范
-
-- 默认按 TypeScript `strict` 心智写代码；优先复用当前作用域已声明的变量、函数、类型和导入，禁止引用未声明标识符或拼错变量名。
-- 禁止隐式 `any` 和 `as any`；函数参数、返回值、解构项、事件对象、`catch` 错误在使用前应有明确类型或先完成类型收窄，并清理未使用的变量和导入。
-
-### next.config 配置规范
-
-- 配置的路径不要写死绝对路径，必须使用 path.resolve(__dirname, ...)、import.meta.dirname 或 process.cwd() 动态拼接。
-
-### Hydration 问题防范
-
-1. 严禁在 JSX 渲染逻辑中直接使用 typeof window、Date.now()、Math.random() 等动态数据。**必须使用 'use client' 并配合 useEffect + useState 确保动态内容仅在客户端挂载后渲染**；同时严禁非法 HTML 嵌套（如 <p> 嵌套 <div>）。
-2. **禁止使用 head 标签**，优先使用 metadata，详见文档：https://nextjs.org/docs/app/api-reference/functions/generate-metadata
-   1. 三方 CSS、字体等资源可在 `globals.css` 中顶部通过 `@import` 引入或使用 next/font
-   2. preload, preconnect, dns-prefetch 通过 ReactDOM 的 preload、preconnect、dns-prefetch 方法引入
-   3. json-ld 可阅读 https://nextjs.org/docs/app/guides/json-ld
-
-## UI 设计与组件规范 (UI & Styling Standards)
-
-- 模板默认预装核心组件库 `shadcn/ui`，位于`src/components/ui/`目录下
-- Next.js 项目**必须默认**采用 shadcn/ui 组件、风格和规范，**除非用户指定用其他的组件和规范。**
+- 包管理器：pnpm only
+- 禁止渲染时调用 Math.random()，用 useEffect+useState 替代
+- JSX 中 > 符号需用 {'>'} 转义
+- LLM 调用仅在后端 (route.ts)，前端通过 fetch + ReadableStream 消费
+- 模拟数据使用固定值，不用随机数
