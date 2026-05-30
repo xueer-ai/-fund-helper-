@@ -248,11 +248,21 @@ function checkFullPosition(navMap: Record<string, number>): FullPositionCheck {
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const type = searchParams.get('type') || 'all';
+  const autoPush = searchParams.get('autopush') === '1';
 
   const navMap = await getLatestNavs();
 
   if (type === 'buy') {
     const signals = detectBuySignals(FUNDS, navMap);
+
+    // 自动推送买点信号
+    if (autoPush) {
+      const triggered = signals.filter((s) => s.isTriggered);
+      if (triggered.length > 0) {
+        pushToWechat('buy_signal', { signals }).catch(() => {});
+      }
+    }
+
     return NextResponse.json({
       disclaimer: DISCLAIMER,
       scanTime: new Date().toISOString(),
@@ -263,6 +273,15 @@ export async function GET(request: NextRequest) {
 
   if (type === 'alert') {
     const alerts = detectAlerts(FUNDS, navMap);
+
+    // 自动推送风控预警
+    if (autoPush) {
+      const urgent = alerts.filter((a) => a.level === 'red' || a.level === 'yellow');
+      if (urgent.length > 0) {
+        pushToWechat('risk_alert', { alerts: urgent }).catch(() => {});
+      }
+    }
+
     return NextResponse.json({
       disclaimer: DISCLAIMER,
       scanTime: new Date().toISOString(),
@@ -288,6 +307,18 @@ export async function GET(request: NextRequest) {
   const alerts = detectAlerts(FUNDS, navMap);
   const fullCheck = checkFullPosition(navMap);
 
+  // 自动推送
+  if (autoPush) {
+    const triggered = signals.filter((s) => s.isTriggered);
+    if (triggered.length > 0) {
+      pushToWechat('buy_signal', { signals: triggered }).catch(() => {});
+    }
+    const urgent = alerts.filter((a) => a.level === 'red' || a.level === 'yellow');
+    if (urgent.length > 0) {
+      pushToWechat('risk_alert', { alerts: urgent }).catch(() => {});
+    }
+  }
+
   return NextResponse.json({
     disclaimer: DISCLAIMER,
     scanTime: new Date().toISOString(),
@@ -304,4 +335,24 @@ export async function GET(request: NextRequest) {
       fullCheckMet: fullCheck.metCount,
     },
   });
+}
+
+// 微信推送辅助函数
+async function pushToWechat(type: 'buy_signal' | 'risk_alert' | 'learning' | 'yanxuan', data: Record<string, unknown>): Promise<void> {
+  const sendKey = process.env.SERVERCHAN_SENDKEY;
+  if (!sendKey) return; // 未配置则跳过
+
+  try {
+    const baseUrl = process.env.DEPLOY_RUN_PORT
+      ? `http://localhost:${process.env.DEPLOY_RUN_PORT}`
+      : 'http://localhost:5000';
+    await fetch(`${baseUrl}/api/push`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sendKey, type, data }),
+      signal: AbortSignal.timeout(10000),
+    });
+  } catch {
+    // 推送失败不影响主流程
+  }
 }

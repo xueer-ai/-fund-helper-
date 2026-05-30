@@ -206,3 +206,118 @@ export function useNotification() {
 
   return { permission, requestPermission, notify };
 }
+
+// ========== 微信推送 Hook ==========
+
+export function useWechatPush() {
+  const [pushEnabled, setPushEnabled] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('serverchan_sendkey');
+    setPushEnabled(!!stored);
+  }, []);
+
+  const pushToWechat = useCallback(async (type: string, data?: Record<string, unknown>) => {
+    const sendKey = localStorage.getItem('serverchan_sendkey');
+    if (!sendKey) return false;
+
+    try {
+      const res = await fetch('/api/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sendKey, type, data }),
+      });
+      const result = await res.json();
+      return result.success;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // 检查自动推送配置
+  const getAutoPushConfig = useCallback(() => {
+    try {
+      const stored = localStorage.getItem('serverchan_auto');
+      if (stored) return JSON.parse(stored);
+    } catch { /* ignore */ }
+    return { buySignal: true, riskAlert: true, learning: false, yanxuan: false };
+  }, []);
+
+  return { pushEnabled, pushToWechat, getAutoPushConfig };
+}
+
+// ========== 工作日定时自动扫描 + 微信推送 Hook ==========
+
+export function useAutoMonitor() {
+  const { pushToWechat, getAutoPushConfig } = useWechatPush();
+  const lastPushRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    const checkAndPush = async () => {
+      const now = new Date();
+      const day = now.getDay();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const timeKey = `${hours}_${minutes}`;
+
+      // 仅工作日
+      if (day < 1 || day > 5) return;
+      // 防止同一分钟重复推送
+      if (lastPushRef.current[timeKey] && Date.now() - lastPushRef.current[timeKey] < 60000) return;
+
+      const autoConfig = getAutoPushConfig();
+
+      // 14:30 尾盘买点扫描 + 推送
+      if (hours === 14 && minutes === 30 && autoConfig.buySignal) {
+        try {
+          const res = await fetch('/api/scan?type=buy');
+          const data = await res.json();
+          const triggered = data.signals?.filter((s: BuySignal) => s.isTriggered) || [];
+          if (triggered.length > 0) {
+            await pushToWechat('buy_signal', { signals: triggered });
+            lastPushRef.current[timeKey] = Date.now();
+          }
+        } catch { /* ignore */ }
+      }
+
+      // 14:30 风控预警推送
+      if (hours === 14 && minutes === 30 && autoConfig.riskAlert) {
+        try {
+          const res = await fetch('/api/scan?type=alert');
+          const data = await res.json();
+          const urgent = data.alerts?.filter((a: Alert) => a.level === 'red' || a.level === 'yellow') || [];
+          if (urgent.length > 0) {
+            await pushToWechat('risk_alert', { alerts: urgent });
+          }
+        } catch { /* ignore */ }
+      }
+
+      // 09:20 早间学习推送
+      if (hours === 9 && minutes === 20 && autoConfig.learning) {
+        try {
+          const res = await fetch('/api/scheduler?action=morning_learning');
+          const data = await res.json();
+          if (data.title) {
+            await pushToWechat('learning', data);
+            lastPushRef.current[timeKey] = Date.now();
+          }
+        } catch { /* ignore */ }
+      }
+
+      // 09:30 严选播报推送
+      if (hours === 9 && minutes === 30 && autoConfig.yanxuan) {
+        try {
+          const res = await fetch('/api/scheduler?action=morning_yanxuan');
+          const data = await res.json();
+          if (data.cycleAnalysis) {
+            await pushToWechat('yanxuan', data);
+            lastPushRef.current[timeKey] = Date.now();
+          }
+        } catch { /* ignore */ }
+      }
+    };
+
+    const timer = setInterval(checkAndPush, 30000); // 每30秒检查
+    return () => clearInterval(timer);
+  }, [pushToWechat, getAutoPushConfig]);
+}

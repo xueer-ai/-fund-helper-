@@ -10,6 +10,7 @@ import { PortfolioPanel } from '@/components/portfolio-panel';
 import { LearningPanel } from '@/components/learning-panel';
 import { RiskAlertPanel } from '@/components/risk-alert-panel';
 import { CommandPanel } from '@/components/command-panel';
+import { useAutoMonitor } from '@/lib/hooks';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: '总览仪表盘' },
@@ -24,6 +25,9 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [currentTime, setCurrentTime] = useState<string>('');
   const [isMarketDay, setIsMarketDay] = useState(false);
+
+  // 启动工作日自动监测 + 微信推送
+  useAutoMonitor();
 
   useEffect(() => {
     const update = () => {

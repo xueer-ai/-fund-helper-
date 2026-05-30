@@ -24,6 +24,7 @@ const NAV_ITEMS: { id: TabId; label: string; icon: string }[] = [
 export function Sidebar({ activeTab, onTabChange, onCommand, currentTime, isMarketDay }: SidebarProps) {
   const [cycle, setCycle] = useState<SemiAnnualCycle | null>(null);
   const [showCommands, setShowCommands] = useState(false);
+  const [showPushSettings, setShowPushSettings] = useState(false);
 
   useEffect(() => {
     const now = new Date();
@@ -156,8 +157,8 @@ export function Sidebar({ activeTab, onTabChange, onCommand, currentTime, isMark
         </div>
       </nav>
 
-      {/* 底部监测标的 */}
-      <div className="px-4 py-3 border-t border-border">
+      {/* 底部监测标的 + 微信推送 */}
+      <div className="px-4 py-3 border-t border-border space-y-2">
         <p className="text-[10px] text-muted-foreground mb-1">监测标的 · {FUNDS.length}只</p>
         <div className="flex flex-wrap gap-1">
           {FUNDS.slice(0, 4).map((f) => (
@@ -167,7 +168,97 @@ export function Sidebar({ activeTab, onTabChange, onCommand, currentTime, isMark
           ))}
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground">+4</span>
         </div>
+
+        {/* 微信推送入口 */}
+        <button
+          onClick={() => setShowPushSettings(!showPushSettings)}
+          className="w-full flex items-center justify-between px-2 py-1.5 rounded text-[10px] text-indigo hover:bg-indigo/10 transition-colors"
+        >
+          <span>微信推送设置</span>
+          <span>{showPushSettings ? '▲' : '▼'}</span>
+        </button>
+        {showPushSettings && (
+          <div className="max-h-64 overflow-y-auto">
+            <PushSettingsInline />
+          </div>
+        )}
       </div>
     </aside>
+  );
+}
+
+// 内联精简版推送设置
+function PushSettingsInline() {
+  const [sendKey, setSendKey] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('serverchan_sendkey');
+    if (stored) {
+      setSendKey(stored);
+      setSaved(true);
+    }
+  }, []);
+
+  const handleSave = () => {
+    if (sendKey.trim()) {
+      localStorage.setItem('serverchan_sendkey', sendKey.trim());
+      setSaved(true);
+      setTestResult(null);
+    }
+  };
+
+  const handleTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch('/api/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sendKey: sendKey.trim(), type: 'test' }),
+      });
+      const data = await res.json();
+      setTestResult({
+        success: data.success,
+        message: data.success ? '已发送，查微信' : data.error || '失败',
+      });
+    } catch {
+      setTestResult({ success: false, message: '网络错误' });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2 pt-1 border-t border-border">
+      <div className={`text-[10px] px-2 py-1 rounded ${saved ? 'text-profit bg-profit/10' : 'text-amber bg-amber/10'}`}>
+        {saved ? '已配置' : '未配置 — 填入SendKey'}
+      </div>
+      <div className="flex gap-1">
+        <input
+          type="password"
+          value={sendKey}
+          onChange={(e) => { setSendKey(e.target.value); setSaved(false); }}
+          placeholder="SCT开头SendKey"
+          className="flex-1 min-w-0 rounded border border-border bg-card px-2 py-1 text-[10px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-indigo/50"
+        />
+        <button onClick={handleSave} disabled={!sendKey.trim()} className="rounded bg-indigo px-2 py-1 text-[10px] text-white hover:bg-indigo/80 disabled:opacity-40">保存</button>
+      </div>
+      <button
+        onClick={handleTest}
+        disabled={!saved || testing}
+        className="w-full rounded bg-profit/20 text-profit px-2 py-1 text-[10px] hover:bg-profit/30 disabled:opacity-40"
+      >
+        {testing ? '发送中...' : '测试推送'}
+      </button>
+      {testResult && (
+        <p className={`text-[10px] ${testResult.success ? 'text-profit' : 'text-loss'}`}>{testResult.message}</p>
+      )}
+      <p className="text-[9px] text-muted-foreground leading-relaxed">
+        关注公众号「Server酱」→ sct.ftqq.com 获取SendKey
+      </p>
+    </div>
   );
 }
