@@ -3,6 +3,16 @@
 import type { Fund, LearningContent, Quiz } from './types';
 import type { FundPriceParams } from './types';
 
+// ========== 运维参数 ==========
+// 回测模式开关：true时使用回测参数（不触发线上预警和推送）
+export const IS_BACKTEST_MODE = false;
+
+// 推送防骚扰：同一基金24小时内最多推送1次
+export const PUSH_COOLDOWN_HOURS = 24;
+
+// 推送静默规则：以下状态不推送（只有状态变化才推）
+export const PUSH_SILENT_STATUS: string[] = ['持有', '观望'];
+
 // ========== 8 只监测基金 ==========
 export const FUNDS: Fund[] = [
   // ---- 源哥严选 AI 核心建仓标的 ----

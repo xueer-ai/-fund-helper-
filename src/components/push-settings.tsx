@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DISCLAIMER } from '@/lib/constants';
+import { DISCLAIMER, IS_BACKTEST_MODE, PUSH_COOLDOWN_HOURS } from '@/lib/constants';
 
 interface PushSettingsProps {
   onPushToggle?: (enabled: boolean) => void;
@@ -107,12 +107,21 @@ export function PushSettings({ onPushToggle }: PushSettingsProps) {
       <p className="text-[10px] text-muted-foreground leading-relaxed">{DISCLAIMER}</p>
 
       {/* 配置状态 */}
+      {IS_BACKTEST_MODE && (
+        <div className="rounded-md px-3 py-2 text-xs bg-amber/10 text-amber border border-amber/20">
+          回测模式已开启 — 推送已暂停，参数调整不影响线上
+        </div>
+      )}
       <div className={`rounded-md px-3 py-2 text-xs ${
-        pushEnabled
+        pushEnabled && !IS_BACKTEST_MODE
           ? 'bg-profit/10 text-profit border border-profit/20'
+          : IS_BACKTEST_MODE
+          ? 'bg-amber/10 text-amber border border-amber/20'
           : 'bg-amber/10 text-amber border border-amber/20'
       }`}>
-        {pushEnabled
+        {IS_BACKTEST_MODE
+          ? '回测模式 — 推送暂停中'
+          : pushEnabled
           ? '微信推送已启用'
           : '微信推送未配置 — 填入SendKey后可接收信号提醒'}
       </div>
@@ -219,6 +228,12 @@ export function PushSettings({ onPushToggle }: PushSettingsProps) {
               <li>粘贴到上方输入框 → 保存 → 发送测试消息</li>
             </ol>
             <p className="text-amber/80 pt-1">免费版每日限5条推送，建议优先开启买点信号+风控预警</p>
+            <div className="pt-2 space-y-1 text-[10px]">
+              <p className="font-medium text-foreground">推送防骚扰规则</p>
+              <p>• 🔴 红色止损预警：不受冷却限制，随时推送</p>
+              <p>• 🟡🟢 其他提醒：同一基金{PUSH_COOLDOWN_HOURS}小时内只推1次</p>
+              <p>• 持有/观望状态不推送，只有状态变化才推</p>
+            </div>
           </div>
         )}
       </div>

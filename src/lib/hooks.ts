@@ -248,9 +248,18 @@ export function useWechatPush() {
 
 // ========== 工作日定时自动扫描 + 微信推送 Hook ==========
 
+const PUSH_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24小时冷却
+
 export function useAutoMonitor() {
   const { pushToWechat, getAutoPushConfig } = useWechatPush();
   const lastPushRef = useRef<Record<string, number>>({});
+
+  // 冷却检查：红色预警不受冷却限制，其他类型同一基金24h内只推1次
+  const canPush = useCallback((fundCode: string, isRed: boolean): boolean => {
+    if (isRed) return true; // 红色止损预警不受冷却限制
+    const lastTime = lastPushRef.current[fundCode] || 0;
+    return Date.now() - lastTime >= PUSH_COOLDOWN_MS;
+  }, []);
 
   useEffect(() => {
     const checkAndPush = async () => {
@@ -274,20 +283,31 @@ export function useAutoMonitor() {
           const data = await res.json();
           const triggered = data.signals?.filter((s: BuySignal) => s.isTriggered) || [];
           if (triggered.length > 0) {
-            await pushToWechat('buy_signal', { signals: triggered });
+            for (const s of triggered) {
+              if (canPush(s.fundCode, false)) {
+                await pushToWechat('buy_signal', { signals: [s] });
+                lastPushRef.current[s.fundCode] = Date.now();
+              }
+            }
             lastPushRef.current[timeKey] = Date.now();
           }
         } catch { /* ignore */ }
       }
 
-      // 14:30 风控预警推送
+      // 14:30 风控预警推送（分级：红色不受冷却，其他24h冷却）
       if (hours === 14 && minutes === 30 && autoConfig.riskAlert) {
         try {
           const res = await fetch('/api/scan?type=alert');
           const data = await res.json();
           const urgent = data.alerts?.filter((a: Alert) => a.level === 'red' || a.level === 'yellow') || [];
           if (urgent.length > 0) {
-            await pushToWechat('risk_alert', { alerts: urgent });
+            for (const a of urgent) {
+              const isRed = a.level === 'red';
+              if (canPush(a.fundCode || 'general', isRed)) {
+                await pushToWechat(isRed ? 'stop_loss' : 'trailing_stop', { alert: a });
+                lastPushRef.current[a.fundCode || 'general'] = Date.now();
+              }
+            }
           }
         } catch { /* ignore */ }
       }
@@ -319,5 +339,5 @@ export function useAutoMonitor() {
 
     const timer = setInterval(checkAndPush, 30000); // 每30秒检查
     return () => clearInterval(timer);
-  }, [pushToWechat, getAutoPushConfig]);
+  }, [pushToWechat, getAutoPushConfig, canPush]);
 }
