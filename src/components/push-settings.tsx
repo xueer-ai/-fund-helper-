@@ -8,271 +8,196 @@ interface PushSettingsProps {
 }
 
 export function PushSettings({ onPushToggle }: PushSettingsProps) {
-  const [sendKey, setSendKey] = useState('');
-  const [savedKey, setSavedKey] = useState('');
-  const [pushEnabled, setPushEnabled] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [autoBuySignal, setAutoBuySignal] = useState(true);
-  const [autoRiskAlert, setAutoRiskAlert] = useState(true);
-  const [autoLearning, setAutoLearning] = useState(false);
-  const [autoYanxuan, setAutoYanxuan] = useState(false);
-  const [showGuide, setShowGuide] = useState(false);
-  const [configStatus, setConfigStatus] = useState<{ configured: boolean; message: string } | null>(null);
+  const [pushplusToken, setPushplusToken] = useState('');
+  const [serverchanKey, setServerchanKey] = useState('');
+  const [status, setStatus] = useState<{ configured: boolean; primaryChannel: string; backtestMode: boolean } | null>(null);
+  const [testing, setTesting] = useState<'pushplus' | 'serverchan' | null>(null);
+  const [testResult, setTestResult] = useState<{ channel: string; success: boolean; error?: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'pushplus' | 'serverchan'>('pushplus');
 
-  // 加载保存的配置
   useEffect(() => {
-    const stored = localStorage.getItem('serverchan_sendkey');
-    if (stored) {
-      setSavedKey(stored);
-      setSendKey(stored);
-      setPushEnabled(true);
-    }
-    const storedAuto = localStorage.getItem('serverchan_auto');
-    if (storedAuto) {
+    const saved = localStorage.getItem('push_config');
+    if (saved) {
       try {
-        const auto = JSON.parse(storedAuto);
-        setAutoBuySignal(auto.buySignal ?? true);
-        setAutoRiskAlert(auto.riskAlert ?? true);
-        setAutoLearning(auto.learning ?? false);
-        setAutoYanxuan(auto.yanxuan ?? false);
+        const config = JSON.parse(saved);
+        setPushplusToken(config.pushplusToken || '');
+        setServerchanKey(config.serverchanKey || '');
       } catch { /* ignore */ }
     }
-    // 检查服务端配置
-    fetch('/api/push').then(r => r.json()).then(d => setConfigStatus(d)).catch(() => {});
+    fetchStatus();
   }, []);
 
-  // 保存SendKey
-  const handleSave = () => {
-    if (sendKey.trim()) {
-      localStorage.setItem('serverchan_sendkey', sendKey.trim());
-      setSavedKey(sendKey.trim());
-      setPushEnabled(true);
-      setTestResult(null);
-    }
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch('/api/push');
+      const data = await res.json();
+      setStatus({ configured: data.configured, primaryChannel: data.primaryChannel, backtestMode: data.backtestMode });
+    } catch { /* ignore */ }
   };
 
-  // 删除SendKey
-  const handleRemove = () => {
-    localStorage.removeItem('serverchan_sendkey');
-    setSendKey('');
-    setSavedKey('');
-    setPushEnabled(false);
-    setTestResult(null);
+  const saveConfig = () => {
+    setSaving(true);
+    const config = { pushplusToken, serverchanKey, updatedAt: new Date().toISOString() };
+    localStorage.setItem('push_config', JSON.stringify(config));
+    onPushToggle?.(!!pushplusToken || !!serverchanKey);
+    setTimeout(() => setSaving(false), 500);
   };
 
-  // 测试推送
-  const handleTest = async () => {
-    if (!sendKey.trim()) return;
-    setTesting(true);
+  const testPush = async (channel: 'pushplus' | 'serverchan') => {
+    setTesting(channel);
     setTestResult(null);
     try {
+      const body: Record<string, string> = { type: 'test' };
+      if (channel === 'pushplus') body.pushplusToken = pushplusToken;
+      else body.sendKey = serverchanKey;
+
       const res = await fetch('/api/push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sendKey: sendKey.trim(), type: 'test' }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
-      setTestResult({
-        success: data.success,
-        message: data.success
-          ? '推送成功！请检查微信是否收到消息'
-          : data.error || '推送失败',
-      });
-    } catch {
-      setTestResult({ success: false, message: '网络错误，请重试' });
-    } finally {
-      setTesting(false);
+      setTestResult({ channel, success: data.success, error: data.error });
+    } catch (err) {
+      setTestResult({ channel, success: false, error: err instanceof Error ? err.message : '网络错误' });
     }
-  };
-
-  // 保存自动推送配置
-  const saveAutoConfig = (key: string, value: boolean) => {
-    const updates = {
-      buySignal: key === 'buySignal' ? value : autoBuySignal,
-      riskAlert: key === 'riskAlert' ? value : autoRiskAlert,
-      learning: key === 'learning' ? value : autoLearning,
-      yanxuan: key === 'yanxuan' ? value : autoYanxuan,
-    };
-    localStorage.setItem('serverchan_auto', JSON.stringify(updates));
-    if (key === 'buySignal') setAutoBuySignal(value);
-    if (key === 'riskAlert') setAutoRiskAlert(value);
-    if (key === 'learning') setAutoLearning(value);
-    if (key === 'yanxuan') setAutoYanxuan(value);
+    setTesting(null);
   };
 
   return (
-    <div className="space-y-4">
-      {/* 免责声明 */}
-      <p className="text-[10px] text-muted-foreground leading-relaxed">{DISCLAIMER}</p>
-
-      {/* 配置状态 */}
+    <div className="space-y-3">
+      {/* 回测模式提示 */}
       {IS_BACKTEST_MODE && (
-        <div className="rounded-md px-3 py-2 text-xs bg-amber/10 text-amber border border-amber/20">
-          回测模式已开启 — 推送已暂停，参数调整不影响线上
+        <div className="bg-amber-900/30 border border-amber-600/50 rounded-lg p-2 text-[11px] text-amber-400">
+          ⚠️ 回测模式已开启，所有推送已暂停
         </div>
       )}
-      <div className={`rounded-md px-3 py-2 text-xs ${
-        pushEnabled && !IS_BACKTEST_MODE
-          ? 'bg-profit/10 text-profit border border-profit/20'
-          : IS_BACKTEST_MODE
-          ? 'bg-amber/10 text-amber border border-amber/20'
-          : 'bg-amber/10 text-amber border border-amber/20'
-      }`}>
-        {IS_BACKTEST_MODE
-          ? '回测模式 — 推送暂停中'
-          : pushEnabled
-          ? '微信推送已启用'
-          : '微信推送未配置 — 填入SendKey后可接收信号提醒'}
+
+      {/* 通道切换标签 */}
+      <div className="flex gap-1">
+        <button
+          onClick={() => setActiveTab('pushplus')}
+          className={`flex-1 px-3 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+            activeTab === 'pushplus' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          }`}
+        >
+          PushPlus (200条/天)
+        </button>
+        <button
+          onClick={() => setActiveTab('serverchan')}
+          className={`flex-1 px-3 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+            activeTab === 'serverchan' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          }`}
+        >
+          Server酱 (5条/天)
+        </button>
       </div>
 
-      {/* SendKey输入 */}
-      <div className="space-y-2">
-        <label className="text-xs text-muted-foreground">Server酱 SendKey</label>
-        <div className="flex gap-2">
+      {/* PushPlus 配置 */}
+      {activeTab === 'pushplus' && (
+        <div className="space-y-2">
+          <div className="text-[10px] text-emerald-400 font-medium">
+            推荐 · 免费200条/天 · 支持一对多推送
+          </div>
           <input
             type="password"
-            value={sendKey}
-            onChange={(e) => setSendKey(e.target.value)}
-            placeholder="SCT..."
-            className="flex-1 rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-indigo/50"
+            value={pushplusToken}
+            onChange={(e) => setPushplusToken(e.target.value)}
+            placeholder="输入 PushPlus Token"
+            className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-[11px] text-gray-200 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
           />
-          <button
-            onClick={handleSave}
-            disabled={!sendKey.trim()}
-            className="rounded-md bg-indigo px-3 py-2 text-xs text-white font-medium hover:bg-indigo/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            保存
-          </button>
-        </div>
-        {savedKey && (
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground">已保存: {savedKey.slice(0, 8)}...</span>
+          <ol className="text-[10px] text-gray-500 space-y-0.5 ml-3 list-decimal">
+            <li>微信搜索关注公众号「PushPlus推送加」</li>
+            <li>浏览器访问 pushplus.plus 获取 Token</li>
+            <li>填入 Token → 点测试 → 微信收到消息即成功</li>
+          </ol>
+          <div className="flex gap-2">
             <button
-              onClick={handleRemove}
-              className="text-[10px] text-loss hover:underline"
+              onClick={() => testPush('pushplus')}
+              disabled={!pushplusToken || testing === 'pushplus'}
+              className="flex-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-700 disabled:text-gray-500 text-white text-[11px] rounded-md transition-colors"
             >
-              删除
+              {testing === 'pushplus' ? '发送中...' : '测试推送'}
             </button>
           </div>
-        )}
-      </div>
-
-      {/* 测试推送 */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={handleTest}
-          disabled={!sendKey.trim() || testing}
-          className="rounded-md bg-profit/20 text-profit px-3 py-2 text-xs font-medium hover:bg-profit/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          {testing ? '发送中...' : '发送测试消息'}
-        </button>
-        {testResult && (
-          <span className={`text-[11px] ${testResult.success ? 'text-profit' : 'text-loss'}`}>
-            {testResult.message}
-          </span>
-        )}
-      </div>
-
-      {/* 自动推送开关 */}
-      <div className="space-y-2 pt-2 border-t border-border">
-        <p className="text-xs text-muted-foreground font-medium">自动推送设置</p>
-
-        <div className="space-y-2">
-          <ToggleRow
-            label="买点信号触发"
-            description="黄金坑/钻石坑/企稳满仓触发时推送"
-            checked={autoBuySignal}
-            onChange={(v) => saveAutoConfig('buySignal', v)}
-            disabled={!pushEnabled}
-          />
-          <ToggleRow
-            label="风控预警"
-            description="黄色/红色预警触发时推送"
-            checked={autoRiskAlert}
-            onChange={(v) => saveAutoConfig('riskAlert', v)}
-            disabled={!pushEnabled}
-          />
-          <ToggleRow
-            label="源哥言商学习"
-            description="3时段学习内容定时推送"
-            checked={autoLearning}
-            onChange={(v) => saveAutoConfig('learning', v)}
-            disabled={!pushEnabled}
-          />
-          <ToggleRow
-            label="源哥严选播报"
-            description="早间/尾盘严选核心解读推送"
-            checked={autoYanxuan}
-            onChange={(v) => saveAutoConfig('yanxuan', v)}
-            disabled={!pushEnabled}
-          />
-        </div>
-      </div>
-
-      {/* 使用指南 */}
-      <div className="pt-2 border-t border-border">
-        <button
-          onClick={() => setShowGuide(!showGuide)}
-          className="text-[11px] text-indigo hover:underline"
-        >
-          {showGuide ? '收起使用指南 ▲' : '如何获取SendKey？ ▼'}
-        </button>
-        {showGuide && (
-          <div className="mt-2 rounded-md bg-card border border-border px-3 py-3 space-y-2 text-[11px] text-muted-foreground">
-            <p className="font-medium text-foreground">4步接入微信推送</p>
-            <ol className="list-decimal list-inside space-y-1.5 leading-relaxed">
-              <li>微信搜索并关注公众号 <span className="text-foreground font-medium">「Server酱」</span></li>
-              <li>浏览器访问 <span className="text-indigo font-mono">sct.ftqq.com</span> 用微信扫码登录</li>
-              <li>在「Key & API」页面复制你的 <span className="text-foreground font-medium">SendKey</span></li>
-              <li>粘贴到上方输入框 → 保存 → 发送测试消息</li>
-            </ol>
-            <p className="text-amber/80 pt-1">免费版每日限5条推送，建议优先开启买点信号+风控预警</p>
-            <div className="pt-2 space-y-1 text-[10px]">
-              <p className="font-medium text-foreground">推送防骚扰规则</p>
-              <p>• 🔴 红色止损预警：不受冷却限制，随时推送</p>
-              <p>• 🟡🟢 其他提醒：同一基金{PUSH_COOLDOWN_HOURS}小时内只推1次</p>
-              <p>• 持有/观望状态不推送，只有状态变化才推</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 服务端配置状态 */}
-      {configStatus && configStatus.configured && (
-        <div className="text-[10px] text-profit/70">
-          服务端已预置SendKey，无需手动配置
         </div>
       )}
-    </div>
-  );
-}
 
-// 开关行组件
-function ToggleRow({ label, description, checked, onChange, disabled }: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <div>
-        <p className={`text-xs ${disabled ? 'text-muted-foreground/50' : 'text-foreground'}`}>{label}</p>
-        <p className="text-[10px] text-muted-foreground">{description}</p>
-      </div>
+      {/* Server酱 配置 */}
+      {activeTab === 'serverchan' && (
+        <div className="space-y-2">
+          <div className="text-[10px] text-gray-400 font-medium">
+            备用通道 · 免费5条/天
+          </div>
+          <input
+            type="password"
+            value={serverchanKey}
+            onChange={(e) => setServerchanKey(e.target.value)}
+            placeholder="输入 Server酱 SendKey"
+            className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-[11px] text-gray-200 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+          />
+          <ol className="text-[10px] text-gray-500 space-y-0.5 ml-3 list-decimal">
+            <li>微信搜索关注公众号「Server酱」</li>
+            <li>浏览器访问 sct.ftqq.com 获取 SendKey</li>
+            <li>填入 SendKey → 点测试 → 微信收到消息即成功</li>
+          </ol>
+          <div className="flex gap-2">
+            <button
+              onClick={() => testPush('serverchan')}
+              disabled={!serverchanKey || testing === 'serverchan'}
+              className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white text-[11px] rounded-md transition-colors"
+            >
+              {testing === 'serverchan' ? '发送中...' : '测试推送'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 测试结果 */}
+      {testResult && (
+        <div className={`p-2 rounded-md text-[10px] ${
+          testResult.success ? 'bg-emerald-900/30 text-emerald-400' : 'bg-red-900/30 text-red-400'
+        }`}>
+          {testResult.success
+            ? `✅ ${testResult.channel === 'pushplus' ? 'PushPlus' : 'Server酱'}推送成功！请检查微信`
+            : `❌ 推送失败：${testResult.error}`
+          }
+        </div>
+      )}
+
+      {/* 保存按钮 */}
       <button
-        onClick={() => !disabled && onChange(!checked)}
-        disabled={disabled}
-        className={`relative w-9 h-5 rounded-full transition-colors ${
-          checked && !disabled ? 'bg-indigo' : 'bg-muted'
-        } ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+        onClick={saveConfig}
+        className="w-full px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] rounded-md transition-colors"
       >
-        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-          checked && !disabled ? 'translate-x-4' : ''
-        }`} />
+        {saving ? '已保存' : '保存配置'}
       </button>
+
+      {/* 推送规则说明 */}
+      <div className="border-t border-gray-800 pt-2 space-y-1">
+        <div className="text-[10px] text-gray-500 font-medium">推送规则</div>
+        <div className="text-[10px] text-gray-600 space-y-0.5">
+          <div>🔴 止损预警 — 不受冷却限制，随时推送</div>
+          <div>🟡 止盈/风控 — 同基金{PUSH_COOLDOWN_HOURS}h内只推1次</div>
+          <div>🟢 买点信号 — 同基金{PUSH_COOLDOWN_HOURS}h内只推1次</div>
+          <div>📊 学习/严选 — {PUSH_COOLDOWN_HOURS}h内只推1次</div>
+          <div>🔇 持有/观望 — 不推送，只有状态变化才推</div>
+        </div>
+      </div>
+
+      {/* 当前状态 */}
+      {status && (
+        <div className="border-t border-gray-800 pt-2">
+          <div className="text-[10px] text-gray-500">
+            主通道：<span className={status.configured ? 'text-emerald-400' : 'text-red-400'}>
+              {status.configured
+                ? status.primaryChannel === 'pushplus' ? 'PushPlus ✅' : 'Server酱 ✅'
+                : '未配置 ❌'}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -27,6 +27,20 @@ export async function GET(request: NextRequest) {
 
   // 判断当前是否为工作日
   const now = new Date();
+  // Helper: build push payload from env vars
+  function buildPushPayload(extra: Record<string, unknown>): Record<string, unknown> | null {
+    const sendKey = process.env.SEND_KEY;
+    const pushplusToken = process.env.PUSHPLUS_TOKEN;
+    if (!sendKey && !pushplusToken) return null;
+    const payload: Record<string, unknown> = { ...extra };
+    if (sendKey) payload.sendKey = sendKey;
+    if (pushplusToken) {
+      payload.pushplusToken = pushplusToken;
+      payload.pushChannel = 'pushplus';
+    }
+    return payload;
+  }
+
   const dayOfWeek = now.getDay();
   const isWorkday = dayOfWeek >= 1 && dayOfWeek <= 5;
   const hour = now.getHours();
@@ -69,21 +83,20 @@ export async function GET(request: NextRequest) {
       results.scanResult = data;
 
       // 推送学习内容（如果用户开启了学习推送）
-      const sendKey = process.env.SEND_KEY;
-      if (sendKey) {
+      const pushPayload = buildPushPayload({
+        type: 'learning',
+        data: {
+          period: 'morning',
+          title: data.title || '早间学习',
+          content: (data.content || '').substring(0, 200),
+        },
+      });
+      if (pushPayload) {
         try {
           const pushRes = await fetch(`${baseUrl}/api/push`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              sendKey,
-              type: 'learning',
-              data: {
-                period: 'morning',
-                title: data.title || '早间学习',
-                content: (data.content || '').substring(0, 200),
-              },
-            }),
+            body: JSON.stringify(pushPayload),
             signal: AbortSignal.timeout(10000),
           });
           const pushData = await pushRes.json();
@@ -142,27 +155,26 @@ export async function GET(request: NextRequest) {
       };
 
       // 推送触发的买点信号
-      const sendKey = process.env.SEND_KEY;
-      if (sendKey) {
-        const triggeredSignals: Array<{ fundCode: string; tierName: string; threshold: number; currentNav: number }> = scanData.signals?.filter(
-          (s: { isTriggered: boolean }) => s.isTriggered
-        ) || [];
+      const triggeredSignals: Array<{ fundCode: string; tierName: string; threshold: number; currentNav: number }> = scanData.signals?.filter(
+        (s: { isTriggered: boolean }) => s.isTriggered
+      ) || [];
 
-        for (const signal of triggeredSignals) {
+      for (const signal of triggeredSignals) {
+        const pushPayload = buildPushPayload({
+          type: 'buy_signal',
+          data: {
+            fundName: signal.fundCode,
+            tierName: signal.tierName,
+            threshold: signal.threshold,
+            currentNav: signal.currentNav,
+          },
+        });
+        if (pushPayload) {
           try {
             const pushRes = await fetch(`${baseUrl}/api/push`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                sendKey,
-                type: 'buy_signal',
-                data: {
-                  fundName: signal.fundCode,
-                  tierName: signal.tierName,
-                  threshold: signal.threshold,
-                  currentNav: signal.currentNav,
-                },
-              }),
+              body: JSON.stringify(pushPayload),
               signal: AbortSignal.timeout(10000),
             });
             const pushData = await pushRes.json();
@@ -188,44 +200,43 @@ export async function GET(request: NextRequest) {
         ) || [];
 
         for (const alert of redAlerts) {
-          try {
-            const pushRes = await fetch(`${baseUrl}/api/push`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                sendKey,
+          const alertPayload = buildPushPayload({
+            type: 'stop_loss',
+            data: {
+              fundName: alert.fundCode || alert.title,
+              description: alert.message,
+            },
+          });
+          if (alertPayload) {
+            try {
+              const pushRes = await fetch(`${baseUrl}/api/push`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(alertPayload),
+                signal: AbortSignal.timeout(10000),
+              });
+              const pushData = await pushRes.json();
+              results.pushResults.push({
                 type: 'stop_loss',
-                data: {
-                  fundName: alert.fundCode || alert.title,
-                  description: alert.message,
-                },
-              }),
-              signal: AbortSignal.timeout(10000),
-            });
-            const pushData = await pushRes.json();
-            results.pushResults.push({
-              type: 'stop_loss',
-              fundCode: alert.fundCode,
-              success: pushData.success || false,
-              message: pushData.error || '推送完成',
-            });
-          } catch {
-            results.pushResults.push({
-              type: 'stop_loss',
-              fundCode: alert.fundCode,
-              success: false,
-              message: '推送请求失败',
-            });
+                fundCode: alert.fundCode,
+                success: pushData.success || false,
+                message: pushData.error || '推送完成',
+              });
+            } catch {
+              results.pushResults.push({
+                type: 'stop_loss',
+                fundCode: alert.fundCode,
+                success: false,
+                message: '推送请求失败',
+              });
+            }
           }
-        }
-      }
+        } // end for redAlerts
+      } // end for triggeredSignals
     } catch {
       results.scanResult = { error: '尾盘扫描失败' };
     }
-  }
-
-  // 15:05 收盘归档（15:00-15:15）
-  else if (timeSlot >= 900 && timeSlot <= 915) {
+  } else if (timeSlot >= 900 && timeSlot <= 915) {
     results.period = 'close_summary';
     try {
       const scanRes = await fetch(`${baseUrl}/api/scan?type=all`, {
@@ -239,21 +250,20 @@ export async function GET(request: NextRequest) {
       };
 
       // 推送收盘日报
-      const sendKey = process.env.SEND_KEY;
-      if (sendKey) {
+      const dailyPayload = buildPushPayload({
+        type: 'daily_summary',
+        data: {
+          date: now.toLocaleDateString('zh-CN'),
+          signals: scanData.signals?.filter((s: { isTriggered: boolean }) => s.isTriggered).length || 0,
+          alerts: scanData.riskAlerts?.length || 0,
+        },
+      });
+      if (dailyPayload) {
         try {
           const pushRes = await fetch(`${baseUrl}/api/push`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              sendKey,
-              type: 'daily_summary',
-              data: {
-                date: now.toLocaleDateString('zh-CN'),
-                signals: scanData.signals?.filter((s: { isTriggered: boolean }) => s.isTriggered).length || 0,
-                alerts: scanData.riskAlerts?.length || 0,
-              },
-            }),
+            body: JSON.stringify(dailyPayload),
             signal: AbortSignal.timeout(10000),
           });
           const pushData = await pushRes.json();
@@ -297,47 +307,50 @@ export async function GET(request: NextRequest) {
 
       // 只有触发信号才推送（静默期规则：不触发不推）
       if (triggeredCount > 0) {
-        const sendKey = process.env.SEND_KEY;
-        if (sendKey) {
+        try {
           for (const signal of data.signals.filter((s: { isTriggered: boolean }) => s.isTriggered)) {
-            try {
-              const pushRes = await fetch(`${baseUrl}/api/push`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  sendKey,
+            const sigPayload = buildPushPayload({
+              type: 'buy_signal',
+              data: {
+                fundName: signal.fundCode,
+                tierName: signal.tierName,
+                threshold: signal.threshold,
+                currentNav: signal.currentNav,
+              },
+            });
+            if (sigPayload) {
+              try {
+                const pushRes = await fetch(`${baseUrl}/api/push`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(sigPayload),
+                  signal: AbortSignal.timeout(10000),
+                });
+                const pushData = await pushRes.json();
+                results.pushResults.push({
                   type: 'buy_signal',
-                  data: {
-                    fundName: signal.fundCode,
-                    tierName: signal.tierName,
-                    threshold: signal.threshold,
-                    currentNav: signal.currentNav,
-                  },
-                }),
-                signal: AbortSignal.timeout(10000),
-              });
-              const pushData = await pushRes.json();
-              results.pushResults.push({
-                type: 'buy_signal',
-                fundCode: signal.fundCode,
-                success: pushData.success || false,
-                message: pushData.error || '推送完成',
-              });
-            } catch {
-              results.pushResults.push({
-                type: 'buy_signal',
-                fundCode: signal.fundCode,
-                success: false,
-                message: '推送请求失败',
-              });
-            }
-          }
+                  fundCode: signal.fundCode,
+                  success: pushData.success || false,
+                  message: pushData.error || '推送完成',
+                });
+              } catch {
+                results.pushResults.push({
+                  type: 'buy_signal',
+                  fundCode: signal.fundCode,
+                  success: false,
+                  message: '推送请求失败',
+                });
+              }
+            } // end if sigPayload
+          } // end for signals
+        } catch {
+          results.pushResults.push({ type: 'buy_signal', success: false, message: '信号推送异常' });
         }
-      }
+      } // end if triggeredCount
     } catch {
-      results.scanResult = { error: '常规扫描失败' };
+      results.scanResult = { error: '基础扫描失败' };
     }
-  }
+  } // end else routine_check
 
   return NextResponse.json({
     disclaimer: DISCLAIMER,

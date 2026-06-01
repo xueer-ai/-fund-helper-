@@ -10,6 +10,10 @@ export const IS_BACKTEST_MODE = false;
 // 推送防骚扰：同一基金24小时内最多推送1次
 export const PUSH_COOLDOWN_HOURS = 24;
 
+// 推送通道优先级：PushPlus（200条/天）> Server酱（5条/天）
+export const PUSHPLUS_API = 'https://api.pushplus.plus/send';
+export const SERVERCHAN_API = 'https://sctapi.ftqq.com';
+
 // 推送静默规则：以下状态不推送（只有状态变化才推）
 export const PUSH_SILENT_STATUS: string[] = ['持有', '观望'];
 
