@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
 
   // 判断当前是否为工作日
   const now = new Date();
+  const overridePeriod = searchParams.get('period'); // 手动指定时段，用于测试
   // Helper: build push payload from env vars
   function buildPushPayload(extra: Record<string, unknown>): Record<string, unknown> | null {
     const sendKey = process.env.SEND_KEY;
@@ -71,9 +72,10 @@ export async function GET(request: NextRequest) {
     : 'http://localhost:5000';
 
   // ========== 根据时段执行不同任务 ==========
+  const period = overridePeriod || '';
 
   // 09:20 早间学习（09:15-09:25）
-  if (timeSlot >= 555 && timeSlot <= 565) {
+  if (period === 'morning_learning' || timeSlot >= 555 && timeSlot <= 565) {
     results.period = 'morning_learning';
     try {
       const res = await fetch(`${baseUrl}/api/scheduler?action=morning_learning`, {
@@ -115,7 +117,7 @@ export async function GET(request: NextRequest) {
   }
 
   // 09:30 早间严选播报（09:25-09:35）
-  else if (timeSlot >= 565 && timeSlot <= 575) {
+  else if (period === 'morning_yanxuan' || timeSlot >= 565 && timeSlot <= 575) {
     results.period = 'morning_yanxuan';
     try {
       const res = await fetch(`${baseUrl}/api/scheduler?action=morning_yanxuan`, {
@@ -128,7 +130,7 @@ export async function GET(request: NextRequest) {
   }
 
   // 12:00 午间铁律复习（11:55-12:05）
-  else if (timeSlot >= 715 && timeSlot <= 725) {
+  else if (period === 'noon_review' || timeSlot >= 715 && timeSlot <= 725) {
     results.period = 'noon_review';
     try {
       const res = await fetch(`${baseUrl}/api/scheduler?action=noon_review`, {
@@ -141,7 +143,7 @@ export async function GET(request: NextRequest) {
   }
 
   // 14:30 尾盘扫描（14:25-14:40）—— 最关键的时段！
-  else if (timeSlot >= 865 && timeSlot <= 880) {
+  else if (period === 'afternoon_scan' || timeSlot >= 865 && timeSlot <= 880) {
     results.period = 'afternoon_scan';
     try {
       // 全量扫描：净值+买点+风控
@@ -236,7 +238,7 @@ export async function GET(request: NextRequest) {
     } catch {
       results.scanResult = { error: '尾盘扫描失败' };
     }
-  } else if (timeSlot >= 900 && timeSlot <= 915) {
+  } else if (period === 'close_archive' || (timeSlot >= 900 && timeSlot <= 915)) {
     results.period = 'close_summary';
     try {
       const scanRes = await fetch(`${baseUrl}/api/scan?type=all`, {
