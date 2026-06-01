@@ -1,6 +1,7 @@
 // 源哥 AI 基金监控系统 - 基金常量与初始数据
 
 import type { Fund, LearningContent, Quiz } from './types';
+import type { FundPriceParams } from './types';
 
 // ========== 8 只监测基金 ==========
 export const FUNDS: Fund[] = [
@@ -63,15 +64,33 @@ export const FUNDS: Fund[] = [
     isUserHolding: true,
     holding: {
       shares: 0,
-      costNav: 0,
+      costNav: 1.4194,
       currentNav: 0,
       profitRate: 51.61,
     },
+    priceParams: {
+      costPrice: 1.4194,
+      tp: 1.5613,           // +10%止盈目标
+      sl: 1.1355,           // -20%硬止损（大肉仓安全垫厚，给更宽空间）
+      tStop: {
+        enabled: true,
+        highLookbackDays: 60,
+        levels: [
+          { dropPct: 3, action: '🟡接近减仓区，准备好挂单价' },
+          { dropPct: 5, action: '🔴第一批兑现窗口：回撤达5%，可减1/3' },
+          { dropPct: 8, action: '🔴第二批兑现：回撤达8%，再减1/3' },
+        ],
+      },
+      buyZone: { enabled: false, levels: [], extraConditions: ['不建议再加仓，先把利润落袋'] },
+      minBuyIntervalDays: 999, // 禁止加仓
+      minBuyDropPct: 999,
+      role: '右侧盈利·要保利润',
+    },
     cycleRules: {
-      stopProfitThreshold: 8, // 每次拉升5%-8%触发分批减仓
-      canAddPosition: true,
+      stopProfitThreshold: 8,
+      canAddPosition: false,
       priority: 'low',
-      notes: '半导体AI算力上游主线，计入60% AI专属总仓位；拉升5%-8%分批减仓锁利，保留小底仓博弈国庆窗口；指数基金禁止T+0',
+      notes: '右侧盈利仓，动态止盈回撤保护；拉升5%-8%分批减仓锁利；保留小底仓博弈国庆窗口；指数基金禁止T+0',
     },
   },
   {
@@ -83,15 +102,32 @@ export const FUNDS: Fund[] = [
     isUserHolding: true,
     holding: {
       shares: 0,
-      costNav: 0,
+      costNav: 1.4950,
       currentNav: 0,
       profitRate: -10.70,
     },
+    priceParams: {
+      costPrice: 1.4950,
+      tp: 1.6744,           // +12%先求回本+缓冲
+      sl: 1.3455,           // -10%硬止损
+      tStop: { enabled: false, highLookbackDays: 0, levels: [] }, // 未到盈利兑现阶段
+      buyZone: {
+        enabled: true,
+        levels: [
+          { price: 1.4200, label: '补仓观察点1' },
+          { price: 1.3450, label: '补仓观察点2（近SL）' },
+        ],
+        extraConditions: ['补仓闸门关闭，直到满足间距≥10交易日+大盘不极端', '至少再跌5%才考虑第二批'],
+      },
+      minBuyIntervalDays: 10,
+      minBuyDropPct: 5,
+      role: '左侧被套·波动大',
+    },
     cycleRules: {
-      stopLossThreshold: 20, // 浮亏20%强制停补
+      stopLossThreshold: 10, // 改为10%硬止损（用户参数版）
       canAddPosition: false,
       priority: 'medium',
-      notes: 'C类适合波段不建议长拿；浮亏逼近20%暂停加仓+科创50破1200减仓50%；反弹回本逐步减仓资金腾挪等黄金坑；月度核查季报偏移度',
+      notes: 'C类适合波段不建议长拿；今估≥1.4200属等待回归区🟢；今估≤1.3455触🔴认错警戒；补仓须满足间距+大盘不极端',
     },
   },
   {
@@ -103,14 +139,30 @@ export const FUNDS: Fund[] = [
     isUserHolding: true,
     holding: {
       shares: 0,
-      costNav: 0,
+      costNav: 3.5577,
       currentNav: 0,
       profitRate: 16.99,
+    },
+    priceParams: {
+      costPrice: 3.5577,
+      tp: 3.9135,           // +10%止盈目标
+      sl: 3.2731,           // -8%硬止损
+      tStop: {
+        enabled: true,
+        highLookbackDays: 60,
+        levels: [
+          { dropPct: 0, action: '趋势线规则：收盘<20MA且次日不能收回→减仓/警戒' },
+        ],
+      },
+      buyZone: { enabled: false, levels: [], extraConditions: ['不加仓直到趋势重新站上20MA'] },
+      minBuyIntervalDays: 999,
+      minBuyDropPct: 999,
+      role: '趋势跟随·均衡灵活',
     },
     cycleRules: {
       canAddPosition: false,
       priority: 'high',
-      notes: '非AI主线不计入60%专属仓位，作为应急备用金；半年禁止追加；极端风险(油价破90/加息50bp)优先赎回回笼资金；11月前无行情全部清仓',
+      notes: '非AI主线，应急备用金；不加仓直到趋势重新站上20MA；收盘<20MA且次日不收回→减仓警戒；极端风险优先赎回；11月前无行情清仓',
     },
   },
   {
@@ -122,14 +174,30 @@ export const FUNDS: Fund[] = [
     isUserHolding: true,
     holding: {
       shares: 0,
-      costNav: 0,
+      costNav: 1.0949,
       currentNav: 0,
       profitRate: -0.10,
+    },
+    priceParams: {
+      costPrice: 1.0949,
+      tp: undefined as unknown as number, // 暂不设激进TP
+      sl: 0.9635,            // -12%硬止损（主题基允许略宽）
+      tStop: { enabled: false, highLookbackDays: 0, levels: [] },
+      buyZone: {
+        enabled: true,
+        levels: [
+          { price: 1.02, label: '极小仓试探点' },
+        ],
+        extraConditions: ['只有同时满足：①≤1.02 ②距上次买≥14天 ③大盘不暴跌（单日-2%内）→才极小仓试'],
+      },
+      minBuyIntervalDays: 14,
+      minBuyDropPct: 5,
+      role: '主题周期·平本附近',
     },
     cycleRules: {
       canAddPosition: false,
       priority: 'high',
-      notes: '非AI赛道底仓无行情不操作；159140跌至1.28可赎回部分加仓主线；11月未启动则全额清仓回流AI赛道',
+      notes: '非AI赛道底仓，保本/微利前BuyZone不开闸；11月未启动则全额清仓回流AI赛道',
     },
   },
   {

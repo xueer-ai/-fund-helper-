@@ -1,5 +1,35 @@
 // 源哥 AI 基金监控系统 - 核心数据类型与常量
 
+// ========== 关键价位参数（用户参数版） ==========
+export interface FundPriceParams {
+  costPrice: number;           // 成本价（蓝线锚）
+  tp?: number;                 // 止盈目标 TP（紫线）
+  sl: number;                  // 硬止损 SL（红线）
+  tStop?: TStopRule;           // 动态止盈回撤规则（只对盈利仓）
+  buyZone?: BuyZoneRule;       // 补仓触发区间（绿线）
+  minBuyIntervalDays: number;  // 两次补仓最短间隔（交易日）
+  minBuyDropPct?: number;      // 补仓至少再跌百分比
+  role: string;                // 基金角色描述
+}
+
+export interface TStopRule {
+  enabled: boolean;
+  highLookbackDays: number;    // 回看最高净值天数
+  levels: Array<{
+    dropPct: number;           // 从最高点回撤百分比
+    action: string;            // 操作：减1/3、再减1/3等
+  }>;
+}
+
+export interface BuyZoneRule {
+  enabled: boolean;
+  levels: Array<{
+    price: number;             // 补仓价位
+    label: string;             // 标注
+  }>;
+  extraConditions?: string[];  // 额外条件（如大盘不暴跌等）
+}
+
 // ========== 基金类型 ==========
 export interface Fund {
   code: string;
@@ -29,6 +59,8 @@ export interface Fund {
     priority?: 'high' | 'medium' | 'low'; // 赎回优先级
     notes: string;                // 特别提示
   };
+  // 关键价位参数（用户参数版）
+  priceParams?: FundPriceParams;
 }
 
 // ========== 预警等级 ==========

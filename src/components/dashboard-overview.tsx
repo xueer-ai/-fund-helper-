@@ -191,6 +191,41 @@ export function DashboardOverview() {
       ctx.fillText(`${t.label} ${t.value}`, w - padding.right + 4, y - 4);
     });
 
+    // 用户持仓关键价位线（绿/红/蓝/紫）
+    const fundForPP = FUNDS.find(f => f.code === selectedFundData?.code);
+    const pp = fundForPP?.priceParams;
+    if (pp) {
+      const priceLines: Array<{value: number; color: string; label: string}> = [];
+      // 蓝线：成本
+      priceLines.push({ value: pp.costPrice, color: '#60a5fa', label: `成本 ¥${pp.costPrice.toFixed(4)}` });
+      // 红线：硬止损SL
+      priceLines.push({ value: pp.sl, color: '#f87171', label: `SL ¥${pp.sl.toFixed(4)}` });
+      // 紫线：TP止盈
+      if (pp.tp) priceLines.push({ value: pp.tp, color: '#c084fc', label: `TP ¥${pp.tp.toFixed(4)}` });
+      // 绿线：BuyZone
+      if (pp.buyZone?.enabled) {
+        pp.buyZone.levels.forEach(bz => {
+          priceLines.push({ value: bz.price, color: '#34d399', label: `${bz.label} ¥${bz.price.toFixed(4)}` });
+        });
+      }
+
+      priceLines.forEach(pl => {
+        const y = yScale(pl.value);
+        ctx.setLineDash([6, 3]);
+        ctx.strokeStyle = pl.color;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(w - padding.right, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = pl.color;
+        ctx.font = '8px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(pl.label, padding.left + 2, y - 3);
+      });
+    }
+
     // K线绘制
     klineData.forEach((d, i) => {
       const x = padding.left + gap * i + gap / 2;

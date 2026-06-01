@@ -1,17 +1,81 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DISCLAIMER } from '@/lib/constants';
-import { useScanResult, useNotification } from '@/lib/hooks';
-import type { Alert, AlertLevel } from '@/lib/types';
+import { DISCLAIMER, FUNDS } from '@/lib/constants';
+import { useScanResult, useNotification, useFundData } from '@/lib/hooks';
+import type { Alert, AlertLevel, Fund } from '@/lib/types';
 
 export function RiskAlertPanel() {
   const { scanResult, loading, rescan } = useScanResult(true, 120000);
   const { notify, permission, requestPermission } = useNotification();
+  const { fundData, loading: fundLoading } = useFundData(true);
   const [filterLevel, setFilterLevel] = useState<AlertLevel | 'all'>('all');
   const [prevRedCount, setPrevRedCount] = useState(0);
 
   const alerts: Alert[] = scanResult?.alerts || [];
+
+  // 带priceParams的持仓基金
+  const holdingsWithPP = FUNDS.filter((f: Fund) => f.priceParams);
+
+  // ===== 基于精确参数的动态预警 =====
+  const priceAlerts: Alert[] = holdingsWithPP.flatMap((h: Fund) => {
+    const pp = h.priceParams!;
+    const liveFund = fundData?.find((f: { code: string }) => f.code === h.code);
+    const nav = liveFund?.nav || 0;
+    const result: Alert[] = [];
+    // 硬止损SL检测
+    if (nav > 0 && nav <= pp.sl) {
+      result.push({
+        id: `sl_${h.code}`,
+        level: 'red' as AlertLevel,
+        title: `🔴 认错警戒：${h.name}触及硬止损`,
+        message: `当前净值${nav} ≤ SL止损线${pp.sl}，已从成本${pp.costPrice}下跌超限。核对收盘价是否有效跌破，若是→执行减仓/清仓计划。`,
+        fundCode: h.code,
+        timestamp: new Date(),
+        action: '核对收盘价 → 有效跌破则减仓/清仓',
+        knowledgeLink: '价格止损铁律',
+      });
+    }
+    // 动态止盈回撤检测（tStop）
+    if (pp.tStop?.enabled && nav > 0) {
+      const hHigh = Math.max(nav, pp.costPrice * 1.5);
+      const drawdown = (hHigh - nav) / hHigh;
+      const levels = pp.tStop.levels.slice().sort((a, b) => b.dropPct - a.dropPct);
+      for (const lv of levels) {
+        if (drawdown * 100 >= lv.dropPct) {
+          const isHighest = lv.dropPct >= 5;
+          result.push({
+            id: `tstop${lv.dropPct}_${h.code}`,
+            level: (isHighest ? 'yellow' : 'normal') as AlertLevel,
+            title: `${isHighest ? '🟡' : '🟢'} ${h.name}从高点回撤≥${lv.dropPct}%`,
+            message: `回撤达${(drawdown * 100).toFixed(1)}%。${lv.action}`,
+            fundCode: h.code,
+            timestamp: new Date(),
+            action: lv.action,
+            knowledgeLink: '动态止盈回撤铁律',
+          });
+          break;
+        }
+      }
+    }
+    // 距SL缓冲提示（所有持仓）
+    if (nav > 0 && nav > pp.sl) {
+      const bufferPct = ((nav - pp.sl) / pp.sl * 100);
+      if (bufferPct < 5) {
+        result.push({
+          id: `buffer_${h.code}`,
+          level: 'yellow' as AlertLevel,
+          title: `🟡 ${h.name}距止损线仅${bufferPct.toFixed(1)}%缓冲`,
+          message: `当前净值${nav}，SL线${pp.sl}，距止损不足5%。补仓闸门关闭，等待间距+大盘条件。`,
+          fundCode: h.code,
+          timestamp: new Date(),
+          action: '补仓闸门关闭，间距+大盘条件缺一不可',
+          knowledgeLink: '补仓间距铁律',
+        });
+      }
+    }
+    return result;
+  });
 
   // 红色预警自动通知
   useEffect(() => {
@@ -58,9 +122,10 @@ export function RiskAlertPanel() {
     },
   ];
 
-  // 合并动态和静态预警（去重）
+  // 合并动态和静态预警+价格参数预警（去重）
   const dynamicIds = new Set(alerts.map((a) => a.id));
-  const allAlerts = [...alerts, ...staticAlerts.filter((a) => !dynamicIds.has(a.id))];
+  const priceAlertIds = new Set(priceAlerts.map((a) => a.id));
+  const allAlerts = [...priceAlerts, ...alerts, ...staticAlerts.filter((a) => !dynamicIds.has(a.id) && !priceAlertIds.has(a.id))];
 
   const filteredAlerts = filterLevel === 'all' ? allAlerts : allAlerts.filter((a) => a.level === filterLevel);
 
@@ -163,48 +228,41 @@ export function RiskAlertPanel() {
 
       {/* 风控铁律速查 */}
       <div className="bg-card-bg rounded-lg p-4 border border-border">
-        <h3 className="text-sm font-medium text-foreground mb-3">风控铁律速查</h3>
+        <h3 className="text-sm font-medium text-foreground mb-3">风控铁律速查（含精确价位）</h3>
         <div className="grid grid-cols-2 gap-3">
-          {[
-            {
-              title: '分批建仓3-3-4',
-              desc: '备用资金分3批投入，禁止梭哈',
-              level: 'normal' as AlertLevel,
-            },
-            {
-              title: '追高拦截',
-              desc: '159140>1.37 / 022364>5.68 劝阻新开仓',
-              level: 'normal' as AlertLevel,
-            },
-            {
-              title: '浮亏止损',
-              desc: '平安半导体亏至20%立刻停补仓',
-              level: 'yellow' as AlertLevel,
-            },
-            {
-              title: '6个月时间止损',
-              desc: '11月未创新高AI仓位压至20%以下',
-              level: 'yellow' as AlertLevel,
-            },
-            {
-              title: '极端风控',
-              desc: '油价破90/加息50bp → 赎回宝盈+新能源 → AI仓位≤30%',
-              level: 'red' as AlertLevel,
-            },
-          ].map((rule, i) => {
-            const style = levelColors[rule.level];
+          {holdingsWithPP.map((h: Fund) => {
+            const pp = h.priceParams!;
+            const liveFund = fundData?.find((f: { code: string }) => f.code === h.code);
+            const nav = liveFund?.nav || 0;
+            const bufferPct = nav > 0 ? ((nav - pp.sl) / pp.sl * 100).toFixed(1) : '--';
             return (
-              <div key={i} className={`p-3 rounded border ${style.border} ${style.bg}`}>
-                <div className="flex items-center gap-1 mb-1">
-                  <span className={`text-[8px] px-1 py-0.5 rounded ${style.badge}`}>
-                    {rule.level === 'normal' ? '常规' : rule.level === 'yellow' ? '黄色' : '红色'}
-                  </span>
-                  <span className="text-xs font-medium text-foreground">{rule.title}</span>
+              <div key={h.code} className="p-3 rounded border border-loss/30 bg-loss/5">
+                <div className="flex items-center gap-1 mb-2">
+                  <span className="text-[8px] px-1 py-0.5 rounded bg-loss/20 text-loss">硬止损</span>
+                  <span className="text-xs font-medium text-foreground">{h.name}</span>
                 </div>
-                <p className="text-[10px] text-muted-foreground">{rule.desc}</p>
+                <div className="space-y-1 text-[10px]">
+                  <p><span className="text-blue-400">成本:{pp.costPrice}</span> <span className="text-loss">SL:{pp.sl}</span></p>
+                  <p><span className="text-purple-400">TP:{pp.tp || '--'}</span> {pp.tStop?.enabled && <span className="text-purple-400">动态回撤</span>}</p>
+                  <p className="text-muted-foreground">距SL缓冲: <span className={Number(bufferPct) < 5 ? 'text-loss font-medium' : 'text-profit'}>{bufferPct}%</span></p>
+                </div>
               </div>
             );
           })}
+          <div className="p-3 rounded border border-profit/20 bg-profit/5">
+            <div className="flex items-center gap-1 mb-1">
+              <span className="text-[8px] px-1 py-0.5 rounded bg-profit/20 text-profit">建仓</span>
+              <span className="text-xs font-medium text-foreground">补仓间距</span>
+            </div>
+            <p className="text-[10px] text-muted-foreground">同基金两次补仓≥10交易日，至少再跌5%才考虑第二批</p>
+          </div>
+          <div className="p-3 rounded border border-amber/30 bg-amber/5">
+            <div className="flex items-center gap-1 mb-1">
+              <span className="text-[8px] px-1 py-0.5 rounded bg-amber/20 text-amber">纪律</span>
+              <span className="text-xs font-medium text-foreground">助手只亮灯</span>
+            </div>
+            <p className="text-[10px] text-muted-foreground">所有价位只做观察+提示，助手不能替你点买卖按钮</p>
+          </div>
         </div>
       </div>
     </div>
