@@ -5,7 +5,7 @@ import type { BuySignal, FullPositionCheck, Alert } from './types';
 
 // ========== 基金实时数据 Hook ==========
 
-interface FundRealtimeData {
+export interface FundRealtimeData {
   code: string;
   name: string;
   nav: number;

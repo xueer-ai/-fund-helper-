@@ -78,7 +78,6 @@ function handleLocalCommand(type: CommandType): string {
 └─────────────────────┴──────┘
 
 规则：≥2项达标可执行满仓，分2日补齐剩余24%总计划仓位
-
 [关联学习：趋势确认理论]
 
 提示：需在交易日14:30尾盘扫描时获取实时数据进行核验`;
@@ -113,7 +112,7 @@ function handleLocalCommand(type: CommandType): string {
   }
 }
 
-export function CommandPanel() {
+export default function CommandPanel() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '0',
@@ -161,7 +160,6 @@ ${Object.keys(COMMAND_MAP).map((k) => `• ${k}`).join('\n')}
       return;
     }
 
-    // 需要调用LLM的指令
     handleLLMCommand(cmdType as CommandType);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -312,57 +310,83 @@ ${Object.keys(COMMAND_MAP).map((k) => `• ${k}`).join('\n')}
   }, [handleSend]);
 
   return (
-    <div className="flex flex-col h-full">
-      <p className="text-xs text-gold/90 font-medium mb-3">{DISCLAIMER}</p>
-
-      {/* 快捷指令栏 */}
-      <div className="flex flex-wrap gap-1.5 mb-4 shrink-0">
-        {Object.entries(COMMAND_MAP).map(([name, cmd]) => (
-          <button
-            key={name}
-            onClick={() => handleQuickCommand(cmd.type)}
-            disabled={isLoading}
-            className="text-xs px-2.5 py-1 rounded bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
-          >
-            {name}
-          </button>
-        ))}
-      </div>
-
-      {/* 对话区 */}
-      <div className="flex-1 overflow-auto space-y-4 mb-4 pr-1">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] p-3 rounded-lg text-xs leading-relaxed whitespace-pre-line ${
-              msg.role === 'user'
-                ? 'bg-primary/20 text-foreground'
-                : 'bg-card-bg border border-border text-foreground/90'
-            }`}>
-              {msg.content}
-              {msg.isStreaming && <span className="inline-block w-1.5 h-3 bg-primary/70 animate-pulse ml-0.5" />}
-            </div>
+    <div className="grid grid-cols-3 gap-4">
+      {/* 左侧：快捷指令 */}
+      <div className="space-y-4">
+        <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-[#e5e7eb]">
+            <h3 className="text-sm font-bold text-[#1f2937]">快捷指令</h3>
           </div>
-        ))}
-        <div ref={messagesEndRef} />
+          <div className="p-4 space-y-1.5">
+            {Object.entries(COMMAND_MAP).map(([name, cmd]) => (
+              <button
+                key={name}
+                onClick={() => handleQuickCommand(cmd.type)}
+                disabled={isLoading}
+                className="w-full text-left px-3 py-2 rounded-lg text-xs text-[#374151] bg-[#f9fafb] border border-[#e5e7eb] hover:bg-[#6366f1]/5 hover:border-[#6366f1]/30 hover:text-[#6366f1] transition-colors disabled:opacity-50"
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 免责声明 */}
+        <div className="bg-[#fffbeb] rounded-lg border border-[#fde68a] p-3">
+          <p className="text-xs text-[#92400e]">{DISCLAIMER}</p>
+        </div>
       </div>
 
-      {/* 输入区 */}
-      <div className="flex items-center gap-2 shrink-0">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="输入指令或问题..."
-          disabled={isLoading}
-          className="flex-1 px-3 py-2 text-xs bg-card-bg border border-border rounded-lg text-foreground placeholder:text-muted-foreground disabled:opacity-50"
-        />
-        <button
-          onClick={handleSend}
-          disabled={isLoading || !input.trim()}
-          className="px-4 py-2 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-        >
-          {isLoading ? '...' : '发送'}
-        </button>
+      {/* 右侧：AI对话区 */}
+      <div className="col-span-2 bg-white rounded-lg border border-[#e5e7eb] overflow-hidden flex flex-col" style={{ minHeight: '500px' }}>
+        <div className="px-4 py-2.5 border-b border-[#e5e7eb]">
+          <h3 className="text-sm font-bold text-[#1f2937]">AI助手对话</h3>
+        </div>
+
+        {/* 对话区 */}
+        <div className="flex-1 overflow-auto p-4 space-y-3">
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex ${
+                msg.role === 'user' ? 'justify-end' : 'justify-start'
+              }`}
+            >
+              <div
+                className={`max-w-[85%] p-3 rounded-lg text-xs leading-relaxed whitespace-pre-line ${
+                  msg.role === 'user'
+                    ? 'bg-[#6366f1] text-white'
+                    : 'bg-[#f9fafb] border border-[#e5e7eb] text-[#374151]'
+                }`}
+              >
+                {msg.content}
+                {msg.isStreaming && (
+                  <span className="inline-block w-1.5 h-3 bg-[#6366f1]/70 animate-pulse ml-0.5" />
+                )}
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* 输入区 */}
+        <div className="flex items-center gap-2 px-4 py-3 border-t border-[#e5e7eb]">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="输入指令或问题..."
+            disabled={isLoading}
+            className="flex-1 px-3 py-2 text-sm bg-[#f9fafb] border border-[#e5e7eb] rounded-lg text-[#1f2937] placeholder:text-[#9ca3af] focus:outline-none focus:border-[#6366f1] disabled:opacity-50"
+          />
+          <button
+            onClick={handleSend}
+            disabled={isLoading || !input.trim()}
+            className="px-4 py-2 text-sm rounded-lg bg-[#6366f1] text-white hover:bg-[#4f46e5] disabled:opacity-50 transition-colors"
+          >
+            {isLoading ? '...' : '发送'}
+          </button>
+        </div>
       </div>
     </div>
   );
