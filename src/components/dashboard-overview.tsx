@@ -156,7 +156,7 @@ export function DashboardOverview() {
     const gap = chartW / klineData.length;
 
     // 网格线
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
     ctx.lineWidth = 0.5;
     for (let i = 0; i <= 4; i++) {
       const y = padding.top + (chartH / 4) * i;
@@ -166,7 +166,7 @@ export function DashboardOverview() {
       ctx.stroke();
       // 价格标签
       const price = maxPrice - (priceRange / 4) * i;
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
       ctx.font = '9px monospace';
       ctx.textAlign = 'left';
       ctx.fillText(price.toFixed(4), w - padding.right + 4, y + 3);
@@ -185,7 +185,7 @@ export function DashboardOverview() {
       ctx.setLineDash([]);
 
       // 标签
-      ctx.fillStyle = t.type === 'golden' ? '#f59e0b' : '#ef4444';
+      ctx.fillStyle = t.type === 'golden' ? '#b47a1b' : '#ef4444';
       ctx.font = 'bold 9px sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(`${t.label} ${t.value}`, w - padding.right + 4, y - 4);
@@ -249,7 +249,7 @@ export function DashboardOverview() {
     });
 
     // 日期标签
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.font = '8px monospace';
     ctx.textAlign = 'center';
     const labelInterval = Math.max(1, Math.floor(klineData.length / 6));
@@ -300,7 +300,7 @@ export function DashboardOverview() {
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
                   sentiment === 'bullish' ? 'bg-profit/20 shadow-[0_0_15px_rgba(16,185,129,0.4)]' :
                   sentiment === 'bearish' ? 'bg-loss/20 shadow-[0_0_15px_rgba(239,68,68,0.4)]' :
-                  'bg-gold/20 shadow-[0_0_15px_rgba(212,168,67,0.3)]'
+                  'bg-gold/20 shadow-[0_0_15px_rgba(180,122,27,0.3)]'
                 }`}>
                   {sentiment === 'bullish' ? '🟢' : sentiment === 'bearish' ? '🔴' : '🟡'}
                 </div>
@@ -458,7 +458,7 @@ export function DashboardOverview() {
             </div>
             <canvas
               ref={chartRef}
-              className="w-full rounded-lg bg-[#1e2230]"
+              className="w-full rounded-lg bg-[#edf1f7]"
               style={{ height: '200px' }}
             />
             {/* 买卖点图例 */}
@@ -547,7 +547,7 @@ export function DashboardOverview() {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <span className="text-xs font-medium text-foreground">{fund.shortName}</span>
+                        <span className="text-xs font-medium text-foreground">{fund.name}</span>
                         <span className="text-xs text-muted-foreground ml-1 font-mono">{fund.code}</span>
                       </div>
                       <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${tagBg}`}>{riskTag}</span>
@@ -643,7 +643,7 @@ export function DashboardOverview() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <span className="text-xs font-medium text-foreground">{fund.shortName}</span>
+                    <span className="text-xs font-medium text-foreground">{fund.name}</span>
                     <span className="text-xs text-muted-foreground ml-1 font-mono">{fund.code}</span>
                   </div>
                   <div className="flex items-center gap-1">

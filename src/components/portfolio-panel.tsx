@@ -214,7 +214,7 @@ export function PortfolioPanel() {
                 {/* 头部：名称+角色+状态灯 */}
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <span className="text-sm font-medium text-foreground">{fund.shortName}</span>
+                    <span className="text-sm font-medium text-foreground">{fund.name}</span>
                     <span className="text-[11px] text-muted-foreground ml-2">{params.role}</span>
                   </div>
                   <span className={`text-[11px] px-2 py-1 rounded font-medium ${STATUS_TAG_STYLES[status.color]}`}>
@@ -356,7 +356,7 @@ export function PortfolioPanel() {
                 >
                   <option value="">选择基金</option>
                   {allFunds.map((f) => (
-                    <option key={f.code} value={f.code}>{f.shortName}</option>
+                    <option key={f.code} value={f.code}>{f.name}</option>
                   ))}
                 </select>
               </div>
