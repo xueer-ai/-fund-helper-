@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DISCLAIMER, FUNDS, CYCLE_DATES, HOT_SECTORS, TOP_ANNUAL_FUNDS } from '@/lib/constants';
+import { DISCLAIMER, FUNDS, CYCLE_DATES } from '@/lib/constants';
 import type { CommandType, TabId, FundPriceParams } from '@/lib/types';
 import { DashboardOverview } from '@/components/dashboard-overview';
 import { BuySignalPanel } from '@/components/buy-signal-panel';
@@ -34,7 +34,6 @@ export default function Home() {
   const [currentTime, setCurrentTime] = useState<string>('');
   const [isMarketDay, setIsMarketDay] = useState(false);
   const [fundMap, setFundMap] = useState<Record<string, { nav: number; change: number; source: string }>>({});
-  const [showSectors, setShowSectors] = useState(false);
 
   useAutoMonitor();
   const { dataQuality, calibrated, lastUpdate } = useFundData();
@@ -105,13 +104,6 @@ export default function Home() {
   const sentimentColor = sentiment === '偏多' ? 'text-profit' : sentiment === '偏空' ? 'text-loss' : 'text-gold';
   const sentimentEmoji = sentiment === '偏多' ? '🟢' : sentiment === '偏空' ? '🔴' : '🟡';
 
-  // 涨跌排名
-  const sortedFunds = Object.entries(fundMap)
-    .filter(([, v]) => v.change !== 0)
-    .sort(([, a], [, b]) => b.change - a.change);
-  const topGainers = sortedFunds.slice(0, 3);
-  const topLosers = sortedFunds.slice(-3).reverse();
-
   const handleCommand = (cmd: CommandType) => {
     if (cmd === 'buy_check') setActiveTab('buy');
     else if (cmd === 'full_portfolio' || cmd === 'update_ledger' || cmd === 'holding_analysis') setActiveTab('portfolio');
@@ -152,9 +144,9 @@ export default function Home() {
         <p className="text-[11px] text-gold/70 tracking-wide">{DISCLAIMER}</p>
       </div>
 
-      {/* ====== 第一区：大盘概览（参考PPT首页） ====== */}
+      {/* ====== 第一区：大盘概览 ====== */}
       <section className="shrink-0 px-5 py-3 border-b border-border/50">
-        <div className="flex items-center gap-5 flex-wrap">
+        <div className="flex items-center gap-6">
           {/* 市场情绪灯 */}
           <div className="flex items-center gap-2">
             <span className="text-xl">{sentimentEmoji}</span>
@@ -164,72 +156,37 @@ export default function Home() {
             </div>
           </div>
           <div className="w-px h-8 bg-border" />
-
-          {/* 主力净流入：涨幅前3 */}
+          {/* 波动TOP3 */}
           <div>
-            <p className="text-[11px] text-muted-foreground mb-0.5">涨幅前3</p>
-            <div className="flex items-center gap-2">
-              {topGainers.map(([code, v]) => {
-                const fund = FUNDS.find(f => f.code === code);
-                return (
-                  <span key={code} className="flex items-center gap-1">
-                    <span className="text-xs text-muted-foreground">{fund?.shortName || code}</span>
-                    <span className="text-xs font-mono font-bold text-profit">
-                      +{v.change.toFixed(2)}%
+            <p className="text-[11px] text-muted-foreground mb-1">今日波动TOP3</p>
+            <div className="flex items-center gap-3">
+              {Object.entries(fundMap)
+                .filter(([, v]) => v.change !== 0)
+                .sort(([, a], [, b]) => Math.abs(b.change) - Math.abs(a.change))
+                .slice(0, 3)
+                .map(([code, v]) => {
+                  const fund = FUNDS.find(f => f.code === code);
+                  return (
+                    <span key={code} className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">{fund?.shortName || code}</span>
+                      <span className={`text-xs font-mono font-bold ${v.change >= 0 ? 'text-profit' : 'text-loss'}`}>
+                        {v.change >= 0 ? '+' : ''}{v.change.toFixed(2)}%
+                      </span>
                     </span>
-                  </span>
-                );
-              })}
-              {topGainers.length === 0 && <span className="text-xs text-muted-foreground">--</span>}
+                  );
+                })}
+              {Object.keys(fundMap).length === 0 && <span className="text-xs text-muted-foreground">加载中...</span>}
             </div>
           </div>
           <div className="w-px h-8 bg-border" />
-
-          {/* 主力净流出：跌幅前3 */}
+          {/* AI仓位 */}
           <div>
-            <p className="text-[11px] text-muted-foreground mb-0.5">跌幅前3</p>
-            <div className="flex items-center gap-2">
-              {topLosers.map(([code, v]) => {
-                const fund = FUNDS.find(f => f.code === code);
-                return (
-                  <span key={code} className="flex items-center gap-1">
-                    <span className="text-xs text-muted-foreground">{fund?.shortName || code}</span>
-                    <span className="text-xs font-mono font-bold text-loss">
-                      {v.change.toFixed(2)}%
-                    </span>
-                  </span>
-                );
-              })}
-              {topLosers.length === 0 && <span className="text-xs text-muted-foreground">--</span>}
-            </div>
+            <p className="text-[11px] text-muted-foreground">AI仓位</p>
+            <p className="text-lg font-mono font-bold text-gold">45%</p>
           </div>
           <div className="w-px h-8 bg-border" />
-
-          {/* 涨幅领先板块 */}
-          <div>
-            <p className="text-[11px] text-muted-foreground mb-0.5">涨幅领先板块</p>
-            <div className="flex items-center gap-2">
-              {HOT_SECTORS.slice(0, 2).map(s => (
-                <span key={s.rank} className="text-xs px-1.5 py-0.5 rounded bg-profit/10 text-profit border border-profit/20">
-                  {s.name.split('（')[0]}
-                </span>
-              ))}
-              <button
-                onClick={() => setShowSectors(!showSectors)}
-                className="text-xs text-indigo hover:text-indigo/80 underline"
-              >
-                TOP5 {showSectors ? '收起' : '展开'}
-              </button>
-            </div>
-          </div>
-          <div className="w-px h-8 bg-border" />
-
-          {/* AI仓位 + 买点/预警 */}
+          {/* 买点/预警 */}
           <div className="flex items-center gap-4">
-            <div>
-              <p className="text-[11px] text-muted-foreground">AI仓位</p>
-              <p className="text-lg font-mono font-bold text-gold">45%</p>
-            </div>
             <div>
               <p className="text-[11px] text-muted-foreground">买点</p>
               <p className="text-sm font-mono font-bold text-muted-foreground">0</p>
@@ -240,48 +197,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        {/* 热门板块TOP5累计统计（可展开/收起） */}
-        {showSectors && (
-          <div className="mt-3 p-3 rounded-lg bg-card-bg border border-border">
-            <h3 className="text-xs font-bold text-foreground mb-2">入围涨幅板块TOP5次数（2026年1月起累计）</h3>
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-border/50 text-muted-foreground">
-                  <th className="text-left py-1.5 px-2 font-medium w-8">#</th>
-                  <th className="text-left py-1.5 px-2 font-medium">板块</th>
-                  <th className="text-center py-1.5 px-2 font-medium">入围次数</th>
-                  <th className="text-left py-1.5 px-2 font-medium">月份</th>
-                  <th className="text-left py-1.5 px-2 font-medium">核心驱动</th>
-                  <th className="text-left py-1.5 px-2 font-medium">代表基金</th>
-                </tr>
-              </thead>
-              <tbody>
-                {HOT_SECTORS.map(s => (
-                  <tr key={s.rank} className="border-b border-border/20 hover:bg-muted/10">
-                    <td className="py-1.5 px-2 font-mono text-gold font-bold">{s.rank}</td>
-                    <td className="py-1.5 px-2 font-medium text-foreground">{s.name}</td>
-                    <td className="py-1.5 px-2 text-center font-mono font-bold text-profit">{s.times}次</td>
-                    <td className="py-1.5 px-2 text-muted-foreground">{s.months}</td>
-                    <td className="py-1.5 px-2 text-muted-foreground">{s.driver}</td>
-                    <td className="py-1.5 px-2 text-indigo text-[11px]">{s.funds}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {/* 年度涨幅领先主动基金 */}
-            <h3 className="text-xs font-bold text-foreground mt-3 mb-1.5">年度涨幅领先主动基金（截至2026.5.31）</h3>
-            <div className="flex items-center gap-4">
-              {TOP_ANNUAL_FUNDS.map(f => (
-                <span key={f.name} className="text-xs px-2 py-1 rounded bg-gold/10 border border-gold/20">
-                  <span className="text-foreground font-medium">{f.name}</span>
-                  <span className="text-profit font-mono font-bold ml-1">+{f.ytd}%</span>
-                  <span className="text-muted-foreground ml-1">{f.note}</span>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </section>
 
       {/* ====== 第二区：我的持仓（表格） ====== */}
