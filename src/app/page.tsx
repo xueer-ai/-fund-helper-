@@ -12,15 +12,6 @@ import { RiskAlertPanel } from '@/components/risk-alert-panel';
 import { CommandPanel } from '@/components/command-panel';
 import { useAutoMonitor } from '@/lib/hooks';
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'overview', label: '总览仪表盘' },
-  { id: 'buy', label: '买点检测' },
-  { id: 'portfolio', label: '持仓台账' },
-  { id: 'learning', label: '源哥言商学习' },
-  { id: 'risk', label: '风控预警' },
-  { id: 'command', label: '交互指令' },
-];
-
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -55,8 +46,8 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-deep-bg text-foreground">
-      {/* 侧边栏 */}
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-deep-bg text-foreground">
+      {/* 顶部横向导航栏 */}
       <Sidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -65,45 +56,19 @@ export default function Home() {
         isMarketDay={isMarketDay}
       />
 
-      {/* 主内容区 */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {/* 顶部免责声明 + 时间 */}
-        <header className="flex items-center justify-between px-6 py-2 border-b border-border bg-deep-bg/80 backdrop-blur-sm shrink-0">
-          <p className="text-xs text-amber/90 font-medium tracking-wide">{DISCLAIMER}</p>
-          <div className="flex items-center gap-4">
-            <span className={`text-xs px-2 py-0.5 rounded ${isMarketDay ? 'bg-profit/20 text-profit' : 'bg-muted text-muted-foreground'}`}>
-              {isMarketDay ? '交易日' : '休市日'}
-            </span>
-            <span className="text-xs text-muted-foreground font-mono">{currentTime}</span>
-          </div>
-        </header>
+      {/* 免责声明条 */}
+      <div className="flex items-center justify-center px-4 py-1 border-b border-border/50 bg-deep-bg/80 shrink-0">
+        <p className="text-[10px] text-amber/80 tracking-wide">{DISCLAIMER}</p>
+      </div>
 
-        {/* 标签栏 */}
-        <nav className="flex items-center gap-1 px-6 py-2 border-b border-border shrink-0">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-primary/20 text-primary font-medium'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* 内容区 */}
-        <div className="flex-1 overflow-auto p-6">
-          {activeTab === 'overview' && <DashboardOverview />}
-          {activeTab === 'buy' && <BuySignalPanel />}
-          {activeTab === 'portfolio' && <PortfolioPanel />}
-          {activeTab === 'learning' && <LearningPanel />}
-          {activeTab === 'risk' && <RiskAlertPanel />}
-          {activeTab === 'command' && <CommandPanel />}
-        </div>
+      {/* 主内容区 - 全宽 */}
+      <main className="flex-1 overflow-auto p-4">
+        {activeTab === 'overview' && <DashboardOverview />}
+        {activeTab === 'buy' && <BuySignalPanel />}
+        {activeTab === 'portfolio' && <PortfolioPanel />}
+        {activeTab === 'learning' && <LearningPanel />}
+        {activeTab === 'risk' && <RiskAlertPanel />}
+        {activeTab === 'command' && <CommandPanel />}
       </main>
     </div>
   );

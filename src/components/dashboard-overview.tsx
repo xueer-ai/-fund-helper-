@@ -421,9 +421,9 @@ export function DashboardOverview() {
       </div>
 
       {/* ====== 2. 中间区域：左侧K线图+策略 | 右侧持仓卡片 ====== */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {/* 左侧：K线走势图 + 买卖点策略 */}
-        <div className="col-span-3 space-y-4">
+        <div className="col-span-2 space-y-4">
           {/* K线走势图 */}
           <div className="bg-card-bg rounded-xl p-4 border border-border shadow-lg">
             <div className="flex items-center justify-between mb-3">
@@ -485,7 +485,7 @@ export function DashboardOverview() {
           {/* 应对策略表格 */}
           <div className="bg-card-bg rounded-xl p-4 border border-border shadow-lg">
             <h3 className="text-xs font-medium text-foreground mb-3">应对策略</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               {signals.map((s) => (
                 <div
                   key={`${s.fundCode}-${s.tier}`}
@@ -525,7 +525,7 @@ export function DashboardOverview() {
         </div>
 
         {/* 右侧：持仓状态卡片 */}
-        <div className="col-span-2 space-y-4">
+        <div className="col-span-1 space-y-4">
           {/* 用户自有持仓 */}
           <div className="bg-card-bg rounded-xl p-4 border border-border shadow-lg">
             <h3 className="text-xs font-medium text-foreground mb-3">自有持仓状态</h3>
@@ -623,7 +623,7 @@ export function DashboardOverview() {
           {fundLoading && <span className="text-[10px] text-muted-foreground ml-2">加载中...</span>}
           <span className="text-[10px] text-muted-foreground ml-2 font-normal">悬停查看详情</span>
         </h3>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-8 gap-3">
           {mergedFundData.map((fund) => {
             const isUp = fund.simChange >= 0;
             const isSelected = selectedFund === fund.code;
@@ -705,7 +705,7 @@ export function DashboardOverview() {
       </div>
 
       {/* ====== 4. 底部：三大周期 + 铁律 ====== */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <div className="bg-card-bg rounded-xl p-4 border border-border shadow-lg">
           <h3 className="text-xs font-medium text-foreground mb-3">源哥三大周期理论</h3>
           <div className="space-y-3">
@@ -733,6 +733,39 @@ export function DashboardOverview() {
               </div>
             ))}
             <p className="text-[10px] text-indigo mt-2">完整7条铁律请在"源哥言商学习"模块查看</p>
+          </div>
+        </div>
+
+        {/* 今日操作要点 */}
+        <div className="bg-card-bg rounded-xl p-4 border border-border shadow-lg">
+          <h3 className="text-xs font-medium text-foreground mb-3">今日操作要点</h3>
+          <div className="space-y-2">
+            {triggeredSignals.length > 0 ? (
+              triggeredSignals.map((s) => (
+                <div key={`action-${s.fundCode}-${s.tier}`} className="p-3 rounded-lg bg-profit/10 border border-profit/30">
+                  <p className="text-xs font-medium text-profit">{s.fundCode} {s.tierName}已触发</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">当前{s.currentNav.toFixed(4)} | {s.positionRatio}</p>
+                </div>
+              ))
+            ) : (
+              <div className="p-3 rounded-lg bg-muted/10 border border-border/50">
+                <p className="text-xs font-medium text-muted-foreground">暂无触发买点</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">耐心等待黄金坑/钻石坑信号</p>
+              </div>
+            )}
+            {alerts.filter(a => a.level === 'red').map((a) => (
+              <div key={`red-${a.id}`} className="p-3 rounded-lg bg-loss/10 border border-loss/30">
+                <p className="text-xs font-medium text-loss">🔴 {a.title}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{a.action}</p>
+              </div>
+            ))}
+            {alerts.filter(a => a.level === 'yellow').map((a) => (
+              <div key={`yellow-${a.id}`} className="p-3 rounded-lg bg-amber/10 border border-amber/30">
+                <p className="text-xs font-medium text-amber">🟡 {a.title}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{a.action}</p>
+              </div>
+            ))}
+            <p className="text-[10px] text-muted-foreground mt-2">所有价位仅供参考，不构成投资建议</p>
           </div>
         </div>
       </div>
