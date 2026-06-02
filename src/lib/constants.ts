@@ -319,6 +319,57 @@ export const HISTORY_CASES = [
   },
 ];
 
+// ========== 入围涨幅板块TOP5（2026年起累计） ==========
+export const HOT_SECTORS = [
+  {
+    rank: 1,
+    name: '通信（光模块/AI算力）',
+    times: 4,
+    months: '1月、3月、4月、5月',
+    driver: '全球AI算力需求爆发，光模块订单排至2028年',
+    funds: '华商均衡成长(011369)、财通多策略福鑫',
+  },
+  {
+    rank: 2,
+    name: '电子（半导体/PCB）',
+    times: 3,
+    months: '1月、3月、4月、5月',
+    driver: '国产替代加速+存储芯片周期反转',
+    funds: '财通集成电路产业(006502)、华夏国证半导体芯片ETF联接A(008887)',
+  },
+  {
+    rank: 3,
+    name: '有色金属（黄金/小金属）',
+    times: 3,
+    months: '1月、2月、5月',
+    driver: '大宗商品价格上涨+避险需求',
+    funds: '黄金股ETF(517400)、有色金属ETF大成(159980)',
+  },
+  {
+    rank: 4,
+    name: '公用事业（电力/煤炭）',
+    times: 2,
+    months: '5月',
+    driver: '夏季用电高峰+AI数据中心耗电激增',
+    funds: '电力ETF(159611)',
+  },
+  {
+    rank: 5,
+    name: '计算机（AI应用）',
+    times: 2,
+    months: '3月、4月',
+    driver: 'AI大模型商业化落地加速',
+    funds: '计算机ETF(512720)',
+  },
+];
+
+// ========== 年度涨幅领先主动基金 ==========
+export const TOP_ANNUAL_FUNDS = [
+  { name: '华商均衡成长', code: '011369', ytd: 101.73, note: '重仓光模块' },
+  { name: '财通多策略福鑫', code: '--', ytd: 101.19, note: '重仓半导体设备与PCB' },
+  { name: '财通系5只基金（金梓才管理）', code: '--', ytd: 87, note: '前五个月收益87%-98%' },
+];
+
 // ========== 交互指令映射 ==========
 export const COMMAND_MAP: Record<string, { label: string; type: string; icon: string }> = {
   '今日买点检测': { label: '扫描核心标的买入条件', type: 'buy_check', icon: '🎯' },
