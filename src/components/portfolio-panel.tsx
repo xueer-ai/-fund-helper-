@@ -67,13 +67,13 @@ function getStatusLight(currentNav: number, params: FundPriceParams): { color: '
 
 const STATUS_STYLES = {
   green: 'border-profit/40 bg-profit/5',
-  yellow: 'border-amber/40 bg-amber/5',
+  yellow: 'border-gold/40 bg-gold/5',
   red: 'border-loss/40 bg-loss/5 animate-pulse',
 };
 
 const STATUS_TAG_STYLES = {
   green: 'bg-profit/20 text-profit',
-  yellow: 'bg-amber/20 text-amber',
+  yellow: 'bg-gold/20 text-gold',
   red: 'bg-loss/20 text-loss',
 };
 
@@ -165,34 +165,34 @@ export function PortfolioPanel() {
 
   return (
     <div className="space-y-6">
-      <p className="text-xs text-amber/90 font-medium">{DISCLAIMER}</p>
+      <p className="text-xs text-gold/90 font-medium">{DISCLAIMER}</p>
 
       {/* AI仓位总览 */}
       <div className="bg-card-bg rounded-lg p-4 border border-border">
         <h2 className="text-sm font-medium text-foreground mb-3">AI主线仓位总览</h2>
         <div className="grid grid-cols-3 gap-4">
           <div className="p-3 rounded bg-muted/20">
-            <span className="text-[10px] text-muted-foreground">AI专属仓位占比</span>
-            <p className={`text-xl font-mono font-bold ${totalAiWeight > 55 ? 'text-loss' : totalAiWeight > 45 ? 'text-amber' : 'text-profit'}`}>
+            <span className="text-xs text-muted-foreground">AI专属仓位占比</span>
+            <p className={`text-xl font-mono font-bold ${totalAiWeight > 55 ? 'text-loss' : totalAiWeight > 45 ? 'text-gold' : 'text-profit'}`}>
               {totalAiWeight}%
             </p>
-            <span className="text-[9px] text-muted-foreground">上限60%</span>
+            <span className="text-[11px] text-muted-foreground">上限60%</span>
           </div>
           <div className="p-3 rounded bg-muted/20">
-            <span className="text-[10px] text-muted-foreground">非AI仓位</span>
+            <span className="text-xs text-muted-foreground">非AI仓位</span>
             <p className="text-xl font-mono font-bold text-foreground">{100 - totalAiWeight}%</p>
-            <span className="text-[9px] text-muted-foreground">宝盈+博时</span>
+            <span className="text-[11px] text-muted-foreground">宝盈+博时</span>
           </div>
           <div className="p-3 rounded bg-muted/20">
-            <span className="text-[10px] text-muted-foreground">持仓总市值</span>
+            <span className="text-xs text-muted-foreground">持仓总市值</span>
             <p className="text-xl font-mono font-bold text-foreground">¥{totalAssets.toLocaleString()}</p>
-            <span className="text-[9px] text-muted-foreground">4只自有基金</span>
+            <span className="text-[11px] text-muted-foreground">4只自有基金</span>
           </div>
         </div>
         {/* 仓位条 */}
         <div className="mt-3">
           <div className="h-2 bg-muted/30 rounded-full overflow-hidden flex">
-            <div className="bg-amber h-full" style={{ width: '35%' }} title="华夏芯片 35%" />
+            <div className="bg-gold h-full" style={{ width: '35%' }} title="华夏芯片 35%" />
             <div className="bg-indigo h-full" style={{ width: '10%' }} title="平安半导体 10%" />
             <div className="bg-muted-foreground/30 h-full" style={{ width: '15%' }} title="宝盈转型 15%" />
             <div className="bg-muted-foreground/20 h-full" style={{ width: '40%' }} title="博时新能源 40%" />
@@ -215,18 +215,18 @@ export function PortfolioPanel() {
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <span className="text-sm font-medium text-foreground">{fund.shortName}</span>
-                    <span className="text-[9px] text-muted-foreground ml-2">{params.role}</span>
+                    <span className="text-[11px] text-muted-foreground ml-2">{params.role}</span>
                   </div>
-                  <span className={`text-[9px] px-2 py-1 rounded font-medium ${STATUS_TAG_STYLES[status.color]}`}>
+                  <span className={`text-[11px] px-2 py-1 rounded font-medium ${STATUS_TAG_STYLES[status.color]}`}>
                     {status.label}
                   </span>
                 </div>
 
                 {/* 状态详情 */}
                 {status.detail && (
-                  <div className={`text-[10px] mb-3 px-2 py-1.5 rounded ${
+                  <div className={`text-xs mb-3 px-2 py-1.5 rounded ${
                     status.color === 'red' ? 'bg-loss/10 text-loss' :
-                    status.color === 'yellow' ? 'bg-amber/10 text-amber' : 'bg-profit/10 text-profit'
+                    status.color === 'yellow' ? 'bg-gold/10 text-gold' : 'bg-profit/10 text-profit'
                   }`}>
                     {status.detail}
                   </div>
@@ -237,31 +237,31 @@ export function PortfolioPanel() {
                   {/* 蓝线：成本 */}
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-0.5 bg-blue-400 rounded" />
-                    <span className="text-[9px] text-blue-400 w-14">成本线</span>
+                    <span className="text-[11px] text-blue-400 w-14">成本线</span>
                     <span className="text-xs font-mono text-foreground">¥{params.costPrice.toFixed(4)}</span>
-                    <span className="text-[9px] text-muted-foreground">（锚）</span>
+                    <span className="text-[11px] text-muted-foreground">（锚）</span>
                   </div>
                   {/* 紫线：TP止盈 */}
                   {params.tp && (
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-0.5 bg-purple-400 rounded" />
-                      <span className="text-[9px] text-purple-400 w-14">止盈TP</span>
+                      <span className="text-[11px] text-purple-400 w-14">止盈TP</span>
                       <span className="text-xs font-mono text-foreground">¥{params.tp.toFixed(4)}</span>
-                      <span className="text-[9px] text-profit">+{((params.tp - params.costPrice) / params.costPrice * 100).toFixed(1)}%</span>
+                      <span className="text-[11px] text-profit">+{((params.tp - params.costPrice) / params.costPrice * 100).toFixed(1)}%</span>
                     </div>
                   )}
                   {/* 红线：SL硬止损 */}
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-0.5 bg-red-400 rounded" />
-                    <span className="text-[9px] text-red-400 w-14">硬止损SL</span>
+                    <span className="text-[11px] text-red-400 w-14">硬止损SL</span>
                     <span className="text-xs font-mono text-foreground">¥{params.sl.toFixed(4)}</span>
-                    <span className="text-[9px] text-loss">{((params.sl - params.costPrice) / params.costPrice * 100).toFixed(1)}%</span>
+                    <span className="text-[11px] text-loss">{((params.sl - params.costPrice) / params.costPrice * 100).toFixed(1)}%</span>
                   </div>
                   {/* 绿线：BuyZone补仓 */}
                   {params.buyZone?.enabled && params.buyZone.levels.map((bz, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <span className="w-3 h-0.5 bg-emerald-400 rounded" />
-                      <span className="text-[9px] text-emerald-400 w-14">{bz.label}</span>
+                      <span className="text-[11px] text-emerald-400 w-14">{bz.label}</span>
                       <span className="text-xs font-mono text-foreground">¥{bz.price.toFixed(4)}</span>
                     </div>
                   ))}
@@ -269,8 +269,8 @@ export function PortfolioPanel() {
                   {params.tStop?.enabled && params.tStop.levels.map((ts, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <span className="w-3 h-0.5 bg-purple-300 rounded" />
-                      <span className="text-[9px] text-purple-300 w-14">回撤{ts.dropPct}%</span>
-                      <span className="text-[9px] text-muted-foreground">{ts.action}</span>
+                      <span className="text-[11px] text-purple-300 w-14">回撤{ts.dropPct}%</span>
+                      <span className="text-[11px] text-muted-foreground">{ts.action}</span>
                     </div>
                   ))}
                 </div>
@@ -278,17 +278,17 @@ export function PortfolioPanel() {
                 {/* 净值+浮盈亏 */}
                 <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/50">
                   <div>
-                    <span className="text-[9px] text-muted-foreground">当前净值</span>
+                    <span className="text-[11px] text-muted-foreground">当前净值</span>
                     <p className="text-sm font-mono text-foreground">{fund.currentNav?.toFixed(4)}</p>
                   </div>
                   <div>
-                    <span className="text-[9px] text-muted-foreground">浮盈亏</span>
+                    <span className="text-[11px] text-muted-foreground">浮盈亏</span>
                     <p className={`text-sm font-mono font-bold ${isProfit ? 'text-profit' : 'text-loss'}`}>
                       {isProfit ? '+' : ''}{fund.profitRate}%
                     </p>
                   </div>
                   <div>
-                    <span className="text-[9px] text-muted-foreground">距SL缓冲</span>
+                    <span className="text-[11px] text-muted-foreground">距SL缓冲</span>
                     <p className={`text-sm font-mono font-bold ${
                       ((fund.currentNav - params.sl) / params.sl * 100) < 5 ? 'text-loss' : 'text-foreground'
                     }`}>
@@ -300,14 +300,14 @@ export function PortfolioPanel() {
                 {/* 补仓闸门状态 */}
                 <div className="mt-2 pt-2 border-t border-border/30">
                   {params.minBuyIntervalDays >= 999 ? (
-                    <span className="text-[9px] text-loss">🔒 补仓闸门关闭 — {params.buyZone?.extraConditions?.[0] || '当前阶段不建议加仓'}</span>
+                    <span className="text-[11px] text-loss">🔒 补仓闸门关闭 — {params.buyZone?.extraConditions?.[0] || '当前阶段不建议加仓'}</span>
                   ) : (
-                    <span className="text-[9px] text-muted-foreground">
+                    <span className="text-[11px] text-muted-foreground">
                       闸门条件：间距≥{params.minBuyIntervalDays}交易日{params.minBuyDropPct ? ` + 再跌${params.minBuyDropPct}%` : ''}
                     </span>
                   )}
                   {params.buyZone?.extraConditions?.filter((_, i) => i > 0 || params.minBuyIntervalDays < 999).map((cond, i) => (
-                    <p key={i} className="text-[9px] text-amber mt-0.5">⚠ {cond}</p>
+                    <p key={i} className="text-[11px] text-gold mt-0.5">⚠ {cond}</p>
                   ))}
                 </div>
               </div>
@@ -321,15 +321,15 @@ export function PortfolioPanel() {
         <h3 className="text-sm font-medium text-foreground mb-2">补仓纪律参数</h3>
         <div className="grid grid-cols-2 gap-3">
           <div className="p-2 rounded bg-muted/20">
-            <span className="text-[9px] text-muted-foreground">最短补仓间隔</span>
-            <p className="text-sm font-mono text-amber">≥ 10个交易日（≈2周）</p>
+            <span className="text-[11px] text-muted-foreground">最短补仓间隔</span>
+            <p className="text-sm font-mono text-gold">≥ 10个交易日（≈2周）</p>
           </div>
           <div className="p-2 rounded bg-muted/20">
-            <span className="text-[9px] text-muted-foreground">补仓跌幅门槛</span>
-            <p className="text-sm font-mono text-amber">至少再跌 5% 才考虑第二批</p>
+            <span className="text-[11px] text-muted-foreground">补仓跌幅门槛</span>
+            <p className="text-sm font-mono text-gold">至少再跌 5% 才考虑第二批</p>
           </div>
         </div>
-        <p className="text-[9px] text-muted-foreground mt-2">原则：距离优先于时间。不是"每跌1%就加"，而是至少再跌5%才考虑。防手痒。</p>
+        <p className="text-[11px] text-muted-foreground mt-2">原则：距离优先于时间。不是"每跌1%就加"，而是至少再跌5%才考虑。防手痒。</p>
       </div>
 
       {/* 操作记录 */}
@@ -338,7 +338,7 @@ export function PortfolioPanel() {
           <h3 className="text-sm font-medium text-foreground">操作记录</h3>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="px-3 py-1.5 text-[10px] rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+            className="px-3 py-1.5 text-xs rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
           >
             {showAddForm ? '取消' : '+ 记录操作'}
           </button>
@@ -348,7 +348,7 @@ export function PortfolioPanel() {
           <div className="p-3 rounded bg-muted/20 border border-border mb-3">
             <div className="grid grid-cols-3 gap-3 mb-3">
               <div>
-                <label className="text-[9px] text-muted-foreground">基金</label>
+                <label className="text-[11px] text-muted-foreground">基金</label>
                 <select
                   value={formData.fundCode}
                   onChange={(e) => setFormData({ ...formData, fundCode: e.target.value })}
@@ -361,7 +361,7 @@ export function PortfolioPanel() {
                 </select>
               </div>
               <div>
-                <label className="text-[9px] text-muted-foreground">操作</label>
+                <label className="text-[11px] text-muted-foreground">操作</label>
                 <select
                   value={formData.action}
                   onChange={(e) => setFormData({ ...formData, action: e.target.value as PortfolioRecord['action'] })}
@@ -374,7 +374,7 @@ export function PortfolioPanel() {
                 </select>
               </div>
               <div>
-                <label className="text-[9px] text-muted-foreground">金额</label>
+                <label className="text-[11px] text-muted-foreground">金额</label>
                 <input
                   type="number"
                   value={formData.amount}
@@ -396,7 +396,7 @@ export function PortfolioPanel() {
               </div>
               <button
                 onClick={handleAddRecord}
-                className="px-4 py-1.5 text-[10px] rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="px-4 py-1.5 text-xs rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 保存
               </button>
@@ -405,7 +405,7 @@ export function PortfolioPanel() {
         )}
 
         {records.length === 0 ? (
-          <p className="text-[10px] text-muted-foreground text-center py-4">暂无操作记录，点击上方按钮添加</p>
+          <p className="text-xs text-muted-foreground text-center py-4">暂无操作记录，点击上方按钮添加</p>
         ) : (
           <div className="space-y-2">
             {records.map((r) => (

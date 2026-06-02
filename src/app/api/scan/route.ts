@@ -59,6 +59,7 @@ function detectBuySignals(funds: typeof FUNDS, navMap: Record<string, number>): 
     if (fund.buyPoints.golden) {
       signals.push({
         fundCode: fund.code,
+        fundName: fund.shortName,
         tier: 1,
         tierName: '黄金坑第一买点',
         threshold: fund.buyPoints.golden,
@@ -76,6 +77,7 @@ function detectBuySignals(funds: typeof FUNDS, navMap: Record<string, number>): 
     if (fund.buyPoints.diamond) {
       signals.push({
         fundCode: fund.code,
+        fundName: fund.shortName,
         tier: 2,
         tierName: '钻石坑第二买点',
         threshold: fund.buyPoints.diamond,

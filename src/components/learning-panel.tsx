@@ -211,7 +211,7 @@ export function LearningPanel() {
 
   return (
     <div className="space-y-6">
-      <p className="text-xs text-amber/90 font-medium">{DISCLAIMER}</p>
+      <p className="text-xs text-gold/90 font-medium">{DISCLAIMER}</p>
 
       {/* 学习时段切换 */}
       <div className="bg-card-bg rounded-lg p-4 border border-border">
@@ -219,7 +219,7 @@ export function LearningPanel() {
           <h2 className="text-sm font-medium text-foreground">源哥言商每日学习</h2>
           <div className="flex items-center gap-1">
             {progress.totalQuizzesTaken > 0 && (
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 答题正确率：{Math.round((progress.totalQuizzesCorrect / progress.totalQuizzesTaken) * 100)}%
               </span>
             )}
@@ -237,9 +237,9 @@ export function LearningPanel() {
               }`}
             >
               <span>{tab.label}</span>
-              <span className="block text-[9px] text-muted-foreground mt-0.5">{tab.time}</span>
+              <span className="block text-[11px] text-muted-foreground mt-0.5">{tab.time}</span>
               {progress[`${tab.key}Completed` as keyof LearningProgress] && (
-                <span className="text-[9px] text-profit">✓ 已完成</span>
+                <span className="text-[11px] text-profit">✓ 已完成</span>
               )}
             </button>
           ))}
@@ -260,11 +260,11 @@ export function LearningPanel() {
 
           {/* 关键要点 */}
           <div className="mb-4">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">必掌握要点</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">必掌握要点</p>
             <div className="space-y-1">
               {learningContent.keyPoints.map((point, i) => (
                 <div key={i} className="flex items-start gap-2 p-2 rounded bg-muted/20">
-                  <span className="text-[9px] text-indigo font-mono mt-0.5">{i + 1}</span>
+                  <span className="text-[11px] text-indigo font-mono mt-0.5">{i + 1}</span>
                   <p className="text-xs text-foreground/80">{point}</p>
                 </div>
               ))}
@@ -274,7 +274,7 @@ export function LearningPanel() {
           {/* 学习测验 */}
           {learningContent.quizzes && learningContent.quizzes.length > 0 && (
             <div className="border-t border-border/50 pt-4">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">学习检验</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">学习检验</p>
               <div className="space-y-4">
                 {learningContent.quizzes.map((quiz) => (
                   <div key={quiz.id} className="p-3 rounded bg-muted/10 border border-border/50">
@@ -303,21 +303,21 @@ export function LearningPanel() {
                     {!quizSubmitted[quiz.id] && quizAnswers[quiz.id] !== undefined && (
                       <button
                         onClick={() => submitQuiz(quiz.id)}
-                        className="mt-2 px-3 py-1 text-[10px] rounded bg-indigo/20 text-indigo hover:bg-indigo/30"
+                        className="mt-2 px-3 py-1 text-xs rounded bg-indigo/20 text-indigo hover:bg-indigo/30"
                       >
                         提交答案
                       </button>
                     )}
                     {quizSubmitted[quiz.id] && (
                       <div className="mt-2 p-2 rounded bg-muted/20">
-                        <p className={`text-[10px] ${
+                        <p className={`text-xs ${
                           quiz.correctIndex === quizAnswers[quiz.id] ? 'text-profit' : 'text-loss'
                         }`}>
                           {quiz.correctIndex === quizAnswers[quiz.id] ? '✓ 正确！' : '✗ 错误'}
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1">{quiz.explanation}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{quiz.explanation}</p>
                         {quiz.source && (
-                          <p className="text-[10px] text-indigo mt-1">出处：{quiz.source}</p>
+                          <p className="text-xs text-indigo mt-1">出处：{quiz.source}</p>
                         )}
                       </div>
                     )}
@@ -329,8 +329,8 @@ export function LearningPanel() {
 
           {/* 关联知识点 */}
           <div className="mt-4 pt-3 border-t border-border/50">
-            <span className="text-[10px] text-muted-foreground">关联学习：</span>
-            <span className="text-[10px] text-indigo ml-1">{learningContent.knowledgeLink}</span>
+            <span className="text-xs text-muted-foreground">关联学习：</span>
+            <span className="text-xs text-indigo ml-1">{learningContent.knowledgeLink}</span>
           </div>
 
           {/* 完成按钮 */}
@@ -359,7 +359,7 @@ export function LearningPanel() {
                   {completed ? '✓' : '○'}
                 </span>
                 <p className="text-xs text-foreground mt-1">{tab.label}</p>
-                <p className="text-[9px] text-muted-foreground">{tab.time}</p>
+                <p className="text-[11px] text-muted-foreground">{tab.time}</p>
               </div>
             );
           })}
@@ -380,11 +380,11 @@ export function LearningPanel() {
         <div className="space-y-2">
           {IRON_RULES.map((rule, i) => (
             <div key={rule.id} className="p-2 rounded bg-muted/20 flex items-start gap-2">
-              <span className="text-[9px] font-mono text-indigo mt-0.5">{i + 1}</span>
+              <span className="text-[11px] font-mono text-indigo mt-0.5">{i + 1}</span>
               <div>
                 <p className="text-xs font-medium text-foreground">{rule.title}</p>
-                <p className="text-[10px] text-muted-foreground">{rule.content}</p>
-                <p className="text-[9px] text-indigo mt-0.5">出处：{rule.source}</p>
+                <p className="text-xs text-muted-foreground">{rule.content}</p>
+                <p className="text-[11px] text-indigo mt-0.5">出处：{rule.source}</p>
               </div>
             </div>
           ))}

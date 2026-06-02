@@ -58,7 +58,7 @@ export default function Home() {
 
       {/* 免责声明条 */}
       <div className="flex items-center justify-center px-4 py-1 border-b border-border/50 bg-deep-bg/80 shrink-0">
-        <p className="text-[10px] text-amber/80 tracking-wide">{DISCLAIMER}</p>
+        <p className="text-[10px] text-gold/80 tracking-wide">{DISCLAIMER}</p>
       </div>
 
       {/* 主内容区 - 全宽 */}

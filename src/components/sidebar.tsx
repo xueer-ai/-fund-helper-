@@ -79,26 +79,26 @@ export function Sidebar({ activeTab, onTabChange, onCommand, currentTime, isMark
           {/* Logo */}
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-bold text-foreground tracking-tight">源哥AI基金监控</h1>
-            <span className="text-[9px] text-muted-foreground">每日建仓 · 全持仓预警 · 言商学习</span>
+            <span className="text-[11px] text-muted-foreground">每日建仓 · 全持仓预警 · 言商学习</span>
           </div>
 
           {/* 半年周期横排 */}
           {cycle && (
             <div className="flex items-center gap-3">
-              <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+              <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
                 cycle.phase === 'layout' ? 'bg-indigo/20 text-indigo' :
-                cycle.phase === 'profit' ? 'bg-amber/20 text-amber' :
+                cycle.phase === 'profit' ? 'bg-gold/20 text-gold' :
                 cycle.phase === 'stop' ? 'bg-loss/20 text-loss' :
                 'bg-loss/30 text-loss'
               }`}>
                 {cycle.phaseName}
               </span>
-              <span className="text-[10px] text-muted-foreground">已运行<b className="text-foreground font-mono">{cycle.daysElapsed}</b>天</span>
-              <span className="text-[10px] text-amber">→国庆<b className="font-mono">{cycle.daysToNationalDay}</b>天</span>
-              <span className="text-[10px] text-loss">→11月止损<b className="font-mono">{cycle.daysToNovember}</b>天</span>
-              <span className="text-[10px] text-muted-foreground">AI上限<b className="text-foreground font-mono">60%</b></span>
+              <span className="text-xs text-muted-foreground">已运行<b className="text-foreground font-mono">{cycle.daysElapsed}</b>天</span>
+              <span className="text-xs text-gold">→国庆<b className="font-mono">{cycle.daysToNationalDay}</b>天</span>
+              <span className="text-xs text-loss">→11月止损<b className="font-mono">{cycle.daysToNovember}</b>天</span>
+              <span className="text-xs text-muted-foreground">AI上限<b className="text-foreground font-mono">60%</b></span>
               {cycle.currentAlert && (
-                <span className="text-[10px] text-amber/80">{cycle.currentAlert}</span>
+                <span className="text-xs text-gold/80">{cycle.currentAlert}</span>
               )}
             </div>
           )}
@@ -108,16 +108,16 @@ export function Sidebar({ activeTab, onTabChange, onCommand, currentTime, isMark
         <div className="flex items-center gap-3">
           {/* 回测模式标识 */}
           {IS_BACKTEST_MODE && (
-            <span className="text-[9px] px-2 py-0.5 rounded bg-amber/20 text-amber font-medium">
+            <span className="text-[11px] px-2 py-0.5 rounded bg-gold/20 text-gold font-medium">
               回测模式
             </span>
           )}
-          <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+          <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
             isMarketDay ? 'bg-profit/20 text-profit' : 'bg-muted/50 text-muted-foreground'
           }`}>
             {isMarketDay ? '交易日' : '休市日'}
           </span>
-          <span className="text-[10px] text-muted-foreground font-mono">{currentTime}</span>
+          <span className="text-xs text-muted-foreground font-mono">{currentTime}</span>
 
           {/* 监测标的标签 */}
           <div className="flex items-center gap-1">
@@ -133,7 +133,7 @@ export function Sidebar({ activeTab, onTabChange, onCommand, currentTime, isMark
           <div className="relative">
             <button
               onClick={() => { setShowCommands(!showCommands); setShowPushSettings(false); }}
-              className="text-[10px] px-2 py-1 rounded bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              className="text-xs px-2 py-1 rounded bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             >
               快捷指令 {showCommands ? '▲' : '▼'}
             </button>
@@ -156,7 +156,7 @@ export function Sidebar({ activeTab, onTabChange, onCommand, currentTime, isMark
           <div className="relative">
             <button
               onClick={() => { setShowPushSettings(!showPushSettings); setShowCommands(false); }}
-              className="text-[10px] px-2 py-1 rounded bg-indigo/15 text-indigo hover:bg-indigo/25 transition-colors"
+              className="text-xs px-2 py-1 rounded bg-indigo/15 text-indigo hover:bg-indigo/25 transition-colors"
             >
               推送 {showPushSettings ? '▲' : '▼'}
             </button>
@@ -245,7 +245,7 @@ function PushSettingsInline() {
 
   return (
     <div className="space-y-2">
-      <div className={`text-[10px] px-2 py-1 rounded ${saved ? 'text-profit bg-profit/10' : 'text-amber bg-amber/10'}`}>
+      <div className={`text-xs px-2 py-1 rounded ${saved ? 'text-profit bg-profit/10' : 'text-gold bg-gold/10'}`}>
         {saved ? 'Server酱已配置' : '未配置 — 填入SendKey'}
       </div>
       <div className="flex gap-1">
@@ -254,31 +254,31 @@ function PushSettingsInline() {
           value={sendKey}
           onChange={(e) => { setSendKey(e.target.value); setSaved(false); }}
           placeholder="SCT开头SendKey"
-          className="flex-1 min-w-0 rounded border border-border bg-card px-2 py-1 text-[10px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-indigo/50"
+          className="flex-1 min-w-0 rounded border border-border bg-card px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-indigo/50"
         />
       </div>
-      <div className="text-[10px] text-muted-foreground mt-1">PushPlus Token（200条/天）</div>
+      <div className="text-xs text-muted-foreground mt-1">PushPlus Token（200条/天）</div>
       <input
         type="password"
         value={pushplusToken}
         onChange={(e) => setPushplusToken(e.target.value)}
         placeholder="PushPlus Token"
-        className="w-full rounded border border-border bg-card px-2 py-1 text-[10px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-indigo/50"
+        className="w-full rounded border border-border bg-card px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-indigo/50"
       />
       <div className="flex gap-2">
-        <button onClick={handleSave} disabled={!sendKey.trim() && !pushplusToken.trim()} className="flex-1 rounded bg-indigo px-2 py-1 text-[10px] text-white hover:bg-indigo/80 disabled:opacity-40">保存</button>
+        <button onClick={handleSave} disabled={!sendKey.trim() && !pushplusToken.trim()} className="flex-1 rounded bg-indigo px-2 py-1 text-xs text-white hover:bg-indigo/80 disabled:opacity-40">保存</button>
         <button
           onClick={handleTest}
           disabled={(!saved && !pushplusToken.trim()) || testing}
-          className="flex-1 rounded bg-profit/20 text-profit px-2 py-1 text-[10px] hover:bg-profit/30 disabled:opacity-40"
+          className="flex-1 rounded bg-profit/20 text-profit px-2 py-1 text-xs hover:bg-profit/30 disabled:opacity-40"
         >
           {testing ? '发送中...' : '测试推送'}
         </button>
       </div>
       {testResult && (
-        <p className={`text-[10px] ${testResult.success ? 'text-profit' : 'text-loss'}`}>{testResult.message}</p>
+        <p className={`text-xs ${testResult.success ? 'text-profit' : 'text-loss'}`}>{testResult.message}</p>
       )}
-      <p className="text-[9px] text-muted-foreground leading-relaxed">
+      <p className="text-[11px] text-muted-foreground leading-relaxed">
         Server酱: sct.ftqq.com · PushPlus: pushplus.plus
       </p>
     </div>

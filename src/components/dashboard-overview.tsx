@@ -300,7 +300,7 @@ export function DashboardOverview() {
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
                   sentiment === 'bullish' ? 'bg-profit/20 shadow-[0_0_15px_rgba(16,185,129,0.4)]' :
                   sentiment === 'bearish' ? 'bg-loss/20 shadow-[0_0_15px_rgba(239,68,68,0.4)]' :
-                  'bg-amber/20 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                  'bg-gold/20 shadow-[0_0_15px_rgba(212,168,67,0.3)]'
                 }`}>
                   {sentiment === 'bullish' ? '🟢' : sentiment === 'bearish' ? '🔴' : '🟡'}
                 </div>
@@ -309,7 +309,7 @@ export function DashboardOverview() {
                 <p className="text-sm font-bold text-foreground">
                   {sentiment === 'bullish' ? '偏多' : sentiment === 'bearish' ? '偏空' : '震荡'}
                 </p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {upCount}涨 / {downCount}跌 / {mergedFundData.length - upCount - downCount}平
                 </p>
               </div>
@@ -319,11 +319,11 @@ export function DashboardOverview() {
 
             {/* 主力资金净流入TOP3 */}
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">今日波动TOP3</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">今日波动TOP3</p>
               <div className="flex items-center gap-3">
                 {topSectors.map((f, i) => (
                   <div key={f.code} className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-muted-foreground">{i + 1}.</span>
+                    <span className="text-xs text-muted-foreground">{i + 1}.</span>
                     <span className="text-xs font-medium text-foreground">{f.shortName}</span>
                     <span className={`text-sm font-mono font-bold ${f.simChange >= 0 ? 'text-profit' : 'text-loss'}`}>
                       {f.simChange >= 0 ? '+' : ''}{f.simChange}%
@@ -337,37 +337,37 @@ export function DashboardOverview() {
           {/* 右侧快捷指标 */}
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-[10px] text-muted-foreground">AI仓位</p>
-              <p className="text-xl font-mono font-bold text-amber">{aiPosition}%</p>
-              <p className="text-[9px] text-muted-foreground">上限60% · 余量{60 - aiPosition}%</p>
+              <p className="text-xs text-muted-foreground">AI仓位</p>
+              <p className="text-xl font-mono font-bold text-gold">{aiPosition}%</p>
+              <p className="text-[11px] text-muted-foreground">上限60% · 余量{60 - aiPosition}%</p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] text-muted-foreground">买点触发</p>
+              <p className="text-xs text-muted-foreground">买点触发</p>
               <span className={`inline-block text-sm font-mono font-bold px-2 py-0.5 rounded ${
                 triggeredSignals.length > 0 ? 'bg-profit/20 text-profit' : 'bg-muted/30 text-muted-foreground'
               }`}>
                 {triggeredSignals.length}
               </span>
-              <p className="text-[9px] text-muted-foreground">/{signals.length}个阈值</p>
+              <p className="text-[11px] text-muted-foreground">/{signals.length}个阈值</p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] text-muted-foreground">满仓条件</p>
+              <p className="text-xs text-muted-foreground">满仓条件</p>
               <span className={`inline-block text-sm font-mono font-bold px-2 py-0.5 rounded ${
                 fullCheck.metCount >= 2 ? 'bg-indigo/20 text-indigo' : 'bg-muted/30 text-muted-foreground'
               }`}>
                 {fullCheck.metCount}/4
               </span>
-              <p className="text-[9px] text-muted-foreground">{fullCheck.isReady ? '≥2项达标' : '未达标'}</p>
+              <p className="text-[11px] text-muted-foreground">{fullCheck.isReady ? '≥2项达标' : '未达标'}</p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] text-muted-foreground">活跃预警</p>
+              <p className="text-xs text-muted-foreground">活跃预警</p>
               <span className={`inline-block text-sm font-mono font-bold px-2 py-0.5 rounded ${
                 alerts.some((a) => a.level === 'red') ? 'bg-loss/20 text-loss' :
-                alerts.some((a) => a.level === 'yellow') ? 'bg-amber/20 text-amber' : 'bg-profit/20 text-profit'
+                alerts.some((a) => a.level === 'yellow') ? 'bg-gold/20 text-gold' : 'bg-profit/20 text-profit'
               }`}>
                 {alerts.length}
               </span>
-              <p className="text-[9px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground">
                 {alerts.filter((a) => a.level === 'red').length}红 · {alerts.filter((a) => a.level === 'yellow').length}黄
               </p>
             </div>
@@ -377,12 +377,12 @@ export function DashboardOverview() {
         {/* 调度状态条 */}
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
           <div className="flex items-center gap-4">
-            <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+            <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
               scheduler?.isWorkday ? 'bg-profit/20 text-profit' : 'bg-muted/50 text-muted-foreground'
             }`}>
               {scheduler?.isWorkday ? '交易日' : '休市日'}
             </span>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               时段：{scheduler?.currentPeriod === 'morning_learning' ? '早间学习' :
                 scheduler?.currentPeriod === 'morning_report' ? '早间播报' :
                 scheduler?.currentPeriod === 'noon_review' ? '午间复习' :
@@ -391,27 +391,27 @@ export function DashboardOverview() {
                 scheduler?.currentPeriod === 'close_learning' ? '收盘学习' :
                 scheduler?.currentPeriod === 'after_hours' ? '盘后' : scheduler?.currentPeriod || '--'}
             </span>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               布局期：{scheduler?.cycle?.phaseName || '--'}
             </span>
             {scheduler?.cycle && (
-              <span className="text-[10px] text-amber">
+              <span className="text-xs text-gold">
                 距国庆{scheduler.cycle.daysToNationalDay}天 · 距11月止损{scheduler.cycle.daysToNovember}天
               </span>
             )}
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] text-muted-foreground">更新：{lastUpdate || '--'}</span>
+            <span className="text-xs text-muted-foreground">更新：{lastUpdate || '--'}</span>
             <button
               onClick={refreshAll}
-              className="text-[10px] px-2 py-1 rounded bg-indigo/20 text-indigo hover:bg-indigo/30 transition-colors"
+              className="text-xs px-2 py-1 rounded bg-indigo/20 text-indigo hover:bg-indigo/30 transition-colors"
             >
               重新扫描
             </button>
             {permission !== 'granted' && (
               <button
                 onClick={requestPermission}
-                className="text-[10px] px-2 py-1 rounded bg-amber/20 text-amber hover:bg-amber/30 transition-colors"
+                className="text-xs px-2 py-1 rounded bg-gold/20 text-gold hover:bg-gold/30 transition-colors"
               >
                 开启通知
               </button>
@@ -434,7 +434,7 @@ export function DashboardOverview() {
                     <button
                       key={f.code}
                       onClick={() => setSelectedFund(f.code)}
-                      className={`text-[9px] px-1.5 py-0.5 rounded transition-colors ${
+                      className={`text-[11px] px-1.5 py-0.5 rounded transition-colors ${
                         (selectedFund || mergedFundData[0]?.code) === f.code
                           ? 'bg-indigo/30 text-indigo'
                           : 'bg-muted/20 text-muted-foreground hover:bg-muted/30'
@@ -452,7 +452,7 @@ export function DashboardOverview() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-loss opacity-75" />
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-loss" />
                   </span>
-                  <span className="text-[9px] text-loss font-medium">风险预警中</span>
+                  <span className="text-[11px] text-loss font-medium">风险预警中</span>
                 </div>
               )}
             </div>
@@ -464,20 +464,20 @@ export function DashboardOverview() {
             {/* 买卖点图例 */}
             <div className="flex items-center gap-4 mt-2 pt-2 border-t border-border/30">
               <div className="flex items-center gap-1.5">
-                <div className="w-4 h-0 border-t-2 border-dashed border-amber" />
-                <span className="text-[9px] text-amber">黄金坑（买入支撑位）</span>
+                <div className="w-4 h-0 border-t-2 border-dashed border-gold" />
+                <span className="text-[11px] text-gold">黄金坑（买入支撑位）</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-4 h-0 border-t-2 border-dashed border-loss" />
-                <span className="text-[9px] text-loss">钻石坑（超跌买入位）</span>
+                <span className="text-[11px] text-loss">钻石坑（超跌买入位）</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-profit" />
-                <span className="text-[9px] text-muted-foreground">阳线（收涨）</span>
+                <span className="text-[11px] text-muted-foreground">阳线（收涨）</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-loss" />
-                <span className="text-[9px] text-muted-foreground">阴线（收跌）</span>
+                <span className="text-[11px] text-muted-foreground">阴线（收跌）</span>
               </div>
             </div>
           </div>
@@ -499,25 +499,25 @@ export function DashboardOverview() {
                     <div className="flex items-center gap-2">
                       <span className={`w-2 h-2 rounded-full ${s.isTriggered ? 'bg-profit' : 'bg-muted-foreground/30'}`} />
                       <span className="text-xs font-medium text-foreground">{s.fundCode}</span>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
-                        s.tierName.includes('黄金') ? 'bg-amber/20 text-amber' :
+                      <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
+                        s.tierName.includes('黄金') ? 'bg-gold/20 text-gold' :
                         s.tierName.includes('钻石') ? 'bg-loss/20 text-loss' :
                         'bg-indigo/20 text-indigo'
                       }`}>
                         {s.tierName}
                       </span>
                     </div>
-                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
                       s.isTriggered ? 'bg-profit/20 text-profit' : 'bg-muted/30 text-muted-foreground'
                     }`}>
                       {s.isTriggered ? '已触发' : '未触发'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-muted-foreground">阈值 <span className="font-mono text-amber">{s.threshold}</span></span>
-                    <span className="text-[10px] text-muted-foreground">当前 <span className={`font-mono ${s.isTriggered ? 'text-profit' : 'text-foreground'}`}>{s.currentNav > 0 ? s.currentNav.toFixed(4) : '--'}</span></span>
+                    <span className="text-xs text-muted-foreground">阈值 <span className="font-mono text-gold">{s.threshold}</span></span>
+                    <span className="text-xs text-muted-foreground">当前 <span className={`font-mono ${s.isTriggered ? 'text-profit' : 'text-foreground'}`}>{s.currentNav > 0 ? s.currentNav.toFixed(4) : '--'}</span></span>
                   </div>
-                  <p className="text-[9px] text-muted-foreground mt-1.5">{s.positionRatio} · {s.knowledgeLink}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1.5">{s.positionRatio} · {s.knowledgeLink}</p>
                 </div>
               ))}
             </div>
@@ -536,7 +536,7 @@ export function DashboardOverview() {
                 const profitColor = profitRate >= 0 ? 'text-profit' : 'text-loss';
                 const riskTag = profitRate < -15 ? '高风险' : profitRate < 0 ? '关注' : profitRate > 40 ? '可止盈' : '持有';
                 const tagBg = riskTag === '高风险' ? 'bg-loss/20 text-loss' :
-                  riskTag === '关注' ? 'bg-amber/20 text-amber' :
+                  riskTag === '关注' ? 'bg-gold/20 text-gold' :
                   riskTag === '可止盈' ? 'bg-profit/20 text-profit' : 'bg-muted/30 text-muted-foreground';
                 return (
                   <div
@@ -548,25 +548,25 @@ export function DashboardOverview() {
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <span className="text-xs font-medium text-foreground">{fund.shortName}</span>
-                        <span className="text-[10px] text-muted-foreground ml-1 font-mono">{fund.code}</span>
+                        <span className="text-xs text-muted-foreground ml-1 font-mono">{fund.code}</span>
                       </div>
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${tagBg}`}>{riskTag}</span>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${tagBg}`}>{riskTag}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
-                        <p className="text-[9px] text-muted-foreground">净值</p>
+                        <p className="text-[11px] text-muted-foreground">净值</p>
                         <p className="text-sm font-mono font-bold text-foreground">
                           {fund.simNav > 0 ? fund.simNav.toFixed(4) : '--'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[9px] text-muted-foreground">今日</p>
+                        <p className="text-[11px] text-muted-foreground">今日</p>
                         <p className={`text-sm font-mono font-bold ${isUp ? 'text-profit' : 'text-loss'}`}>
                           {fund.simNav > 0 ? `${isUp ? '+' : ''}${fund.simChange}%` : '--'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[9px] text-muted-foreground">浮盈亏</p>
+                        <p className="text-[11px] text-muted-foreground">浮盈亏</p>
                         <p className={`text-sm font-mono font-bold ${profitColor}`}>
                           {profitRate >= 0 ? '+' : ''}{profitRate}%
                         </p>
@@ -583,7 +583,7 @@ export function DashboardOverview() {
             <h3 className="text-xs font-medium text-foreground mb-3">风控预警</h3>
             {alerts.length === 0 ? (
               <div className="py-4 text-center">
-                <span className="text-[9px] px-3 py-1 rounded-full bg-profit/20 text-profit">当前无预警</span>
+                <span className="text-[11px] px-3 py-1 rounded-full bg-profit/20 text-profit">当前无预警</span>
               </div>
             ) : (
               <div className="space-y-2">
@@ -592,22 +592,22 @@ export function DashboardOverview() {
                     key={alert.id}
                     className={`p-3 rounded-lg border ${
                       alert.level === 'red' ? 'border-loss/50 bg-loss/10' :
-                      alert.level === 'yellow' ? 'border-amber/50 bg-amber/10' :
+                      alert.level === 'yellow' ? 'border-gold/50 bg-gold/10' :
                       'border-profit/30 bg-profit/5'
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
                         alert.level === 'red' ? 'bg-loss/30 text-loss' :
-                        alert.level === 'yellow' ? 'bg-amber/30 text-amber' :
+                        alert.level === 'yellow' ? 'bg-gold/30 text-gold' :
                         'bg-profit/20 text-profit'
                       }`}>
                         {alert.level === 'red' ? '三级红色' : alert.level === 'yellow' ? '二级黄色' : '一级常规'}
                       </span>
                       <span className="text-xs font-medium text-foreground">{alert.title}</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">{alert.message}</p>
-                    <p className="text-[10px] text-amber mt-1">处置：{alert.action}</p>
+                    <p className="text-xs text-muted-foreground">{alert.message}</p>
+                    <p className="text-xs text-gold mt-1">处置：{alert.action}</p>
                   </div>
                 ))}
               </div>
@@ -620,8 +620,8 @@ export function DashboardOverview() {
       <div className="bg-card-bg rounded-xl p-4 border border-border shadow-lg">
         <h3 className="text-xs font-medium text-foreground mb-3">
           全量监测标的
-          {fundLoading && <span className="text-[10px] text-muted-foreground ml-2">加载中...</span>}
-          <span className="text-[10px] text-muted-foreground ml-2 font-normal">悬停查看详情</span>
+          {fundLoading && <span className="text-xs text-muted-foreground ml-2">加载中...</span>}
+          <span className="text-xs text-muted-foreground ml-2 font-normal">悬停查看详情</span>
         </h3>
         <div className="grid grid-cols-8 gap-3">
           {mergedFundData.map((fund) => {
@@ -636,7 +636,7 @@ export function DashboardOverview() {
                 key={fund.code}
                 className={`p-3 rounded-lg border transition-all cursor-pointer ${
                   isSelected ? 'border-indigo/50 bg-indigo/5 shadow-[0_0_10px_rgba(99,102,241,0.15)]' :
-                  fund.isUserHolding ? 'border-amber/20 hover:border-amber/40' : 'border-border hover:border-border/80'
+                  fund.isUserHolding ? 'border-gold/20 hover:border-gold/40' : 'border-border hover:border-border/80'
                 }`}
                 onMouseEnter={() => setSelectedFund(fund.code)}
                 onClick={() => setSelectedFund(fund.code)}
@@ -644,15 +644,15 @@ export function DashboardOverview() {
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <span className="text-xs font-medium text-foreground">{fund.shortName}</span>
-                    <span className="text-[10px] text-muted-foreground ml-1 font-mono">{fund.code}</span>
+                    <span className="text-xs text-muted-foreground ml-1 font-mono">{fund.code}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     {fund.isRealtime && (
-                      <span className="text-[8px] px-1 py-0.5 rounded bg-profit/20 text-profit">实时</span>
+                      <span className="text-[10px] px-1 py-0.5 rounded bg-profit/20 text-profit">实时</span>
                     )}
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded ${
+                    <span className={`text-[11px] px-1.5 py-0.5 rounded ${
                       fund.category === 'ai_core' ? 'bg-indigo/20 text-indigo' :
-                      fund.category === 'ai_semi' ? 'bg-amber/20 text-amber' :
+                      fund.category === 'ai_semi' ? 'bg-gold/20 text-gold' :
                       'bg-muted text-muted-foreground'
                     }`}>{categoryLabel}</span>
                   </div>
@@ -662,7 +662,7 @@ export function DashboardOverview() {
                     <p className="text-lg font-mono font-bold text-foreground">
                       {fund.simNav > 0 ? fund.simNav.toFixed(fund.code === '科创50' ? 0 : 4) : '--'}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {fund.code === '科创50' ? '点' : '净值'}
                     </p>
                   </div>
@@ -671,7 +671,7 @@ export function DashboardOverview() {
                       {fund.simNav > 0 ? `${isUp ? '+' : ''}${fund.simChange}%` : '--'}
                     </p>
                     {fund.holding && (
-                      <p className={`text-[10px] font-mono ${
+                      <p className={`text-xs font-mono ${
                         fund.holding.profitRate >= 0 ? 'text-profit' : 'text-loss'
                       }`}>
                         浮盈{fund.holding.profitRate >= 0 ? '+' : ''}{fund.holding.profitRate}%
@@ -683,15 +683,15 @@ export function DashboardOverview() {
                 {fund.buyPoints && (
                   <div className="flex gap-2 mt-2 pt-2 border-t border-border/50">
                     {fund.buyPoints.golden && (
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded ${
+                      <span className={`text-[11px] px-1.5 py-0.5 rounded ${
                         fund.simNav > 0 && fund.simNav <= fund.buyPoints.golden ? 'bg-profit/20 text-profit font-medium' : 'bg-muted/50 text-muted-foreground'
                       }`}>
                         黄金坑≤{fund.buyPoints.golden}
                       </span>
                     )}
                     {fund.buyPoints.diamond && (
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded ${
-                        fund.simNav > 0 && fund.simNav <= fund.buyPoints.diamond ? 'bg-amber/20 text-amber font-medium' : 'bg-muted/50 text-muted-foreground'
+                      <span className={`text-[11px] px-1.5 py-0.5 rounded ${
+                        fund.simNav > 0 && fund.simNav <= fund.buyPoints.diamond ? 'bg-gold/20 text-gold font-medium' : 'bg-muted/50 text-muted-foreground'
                       }`}>
                         钻石坑≤{fund.buyPoints.diamond}
                       </span>
@@ -713,11 +713,11 @@ export function DashboardOverview() {
               <div key={ct.id} className="p-3 rounded-lg bg-muted/10 border border-border/50">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-xs font-medium text-indigo">{ct.name}</p>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber/20 text-amber">
+                  <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-gold/20 text-gold">
                     {ct.currentPhase}
                   </span>
                 </div>
-                <p className="text-[10px] text-muted-foreground">{ct.description}</p>
+                <p className="text-xs text-muted-foreground">{ct.description}</p>
               </div>
             ))}
           </div>
@@ -729,10 +729,10 @@ export function DashboardOverview() {
             {IRON_RULES.slice(0, 3).map((rule) => (
               <div key={rule.id} className="p-3 rounded-lg bg-muted/10 border border-border/50">
                 <p className="text-xs font-medium text-foreground">{rule.title}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{rule.content}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{rule.content}</p>
               </div>
             ))}
-            <p className="text-[10px] text-indigo mt-2">完整7条铁律请在"源哥言商学习"模块查看</p>
+            <p className="text-xs text-indigo mt-2">完整7条铁律请在"源哥言商学习"模块查看</p>
           </div>
         </div>
 
@@ -744,28 +744,28 @@ export function DashboardOverview() {
               triggeredSignals.map((s) => (
                 <div key={`action-${s.fundCode}-${s.tier}`} className="p-3 rounded-lg bg-profit/10 border border-profit/30">
                   <p className="text-xs font-medium text-profit">{s.fundCode} {s.tierName}已触发</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">当前{s.currentNav.toFixed(4)} | {s.positionRatio}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">当前{s.currentNav.toFixed(4)} | {s.positionRatio}</p>
                 </div>
               ))
             ) : (
               <div className="p-3 rounded-lg bg-muted/10 border border-border/50">
                 <p className="text-xs font-medium text-muted-foreground">暂无触发买点</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">耐心等待黄金坑/钻石坑信号</p>
+                <p className="text-xs text-muted-foreground mt-0.5">耐心等待黄金坑/钻石坑信号</p>
               </div>
             )}
             {alerts.filter(a => a.level === 'red').map((a) => (
               <div key={`red-${a.id}`} className="p-3 rounded-lg bg-loss/10 border border-loss/30">
                 <p className="text-xs font-medium text-loss">🔴 {a.title}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{a.action}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{a.action}</p>
               </div>
             ))}
             {alerts.filter(a => a.level === 'yellow').map((a) => (
-              <div key={`yellow-${a.id}`} className="p-3 rounded-lg bg-amber/10 border border-amber/30">
-                <p className="text-xs font-medium text-amber">🟡 {a.title}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{a.action}</p>
+              <div key={`yellow-${a.id}`} className="p-3 rounded-lg bg-gold/10 border border-gold/30">
+                <p className="text-xs font-medium text-gold">🟡 {a.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{a.action}</p>
               </div>
             ))}
-            <p className="text-[10px] text-muted-foreground mt-2">所有价位仅供参考，不构成投资建议</p>
+            <p className="text-xs text-muted-foreground mt-2">所有价位仅供参考，不构成投资建议</p>
           </div>
         </div>
       </div>

@@ -59,6 +59,7 @@
   --color-profit: #10b981;
   --color-loss: #ef4444;
   --color-amber: #f59e0b;
+  --color-gold: #d4a843;
   --color-indigo: #6366f1;
   --color-sidebar-bg: #0d1117;
   --color-sidebar-active: #1e293b;
@@ -110,6 +111,7 @@
 
 body {
   @apply font-sans;
+  font-size: 15px;
 }
 
 /* 自定义滚动条 */

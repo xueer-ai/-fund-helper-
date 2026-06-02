@@ -313,7 +313,7 @@ ${Object.keys(COMMAND_MAP).map((k) => `• ${k}`).join('\n')}
 
   return (
     <div className="flex flex-col h-full">
-      <p className="text-xs text-amber/90 font-medium mb-3">{DISCLAIMER}</p>
+      <p className="text-xs text-gold/90 font-medium mb-3">{DISCLAIMER}</p>
 
       {/* 快捷指令栏 */}
       <div className="flex flex-wrap gap-1.5 mb-4 shrink-0">
@@ -322,7 +322,7 @@ ${Object.keys(COMMAND_MAP).map((k) => `• ${k}`).join('\n')}
             key={name}
             onClick={() => handleQuickCommand(cmd.type)}
             disabled={isLoading}
-            className="text-[10px] px-2.5 py-1 rounded bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+            className="text-xs px-2.5 py-1 rounded bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
           >
             {name}
           </button>

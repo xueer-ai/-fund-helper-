@@ -131,13 +131,13 @@ export function RiskAlertPanel() {
 
   const levelColors: Record<AlertLevel, { border: string; bg: string; badge: string; label: string }> = {
     normal: { border: 'border-profit/30', bg: 'bg-profit/5', badge: 'bg-profit/20 text-profit', label: '一级常规' },
-    yellow: { border: 'border-amber/40', bg: 'bg-amber/5', badge: 'bg-amber/20 text-amber', label: '二级黄色' },
+    yellow: { border: 'border-gold/40', bg: 'bg-gold/5', badge: 'bg-gold/20 text-gold', label: '二级黄色' },
     red: { border: 'border-loss/50', bg: 'bg-loss/5', badge: 'bg-loss/20 text-loss', label: '三级红色' },
   };
 
   return (
     <div className="space-y-6">
-      <p className="text-xs text-amber/90 font-medium">{DISCLAIMER}</p>
+      <p className="text-xs text-gold/90 font-medium">{DISCLAIMER}</p>
 
       {/* 预警级别筛选 */}
       <div className="bg-card-bg rounded-lg p-4 border border-border">
@@ -147,7 +147,7 @@ export function RiskAlertPanel() {
             {permission !== 'granted' && (
               <button
                 onClick={requestPermission}
-                className="text-[10px] px-2 py-1 rounded bg-amber/20 text-amber hover:bg-amber/30 transition-colors mr-2"
+                className="text-xs px-2 py-1 rounded bg-gold/20 text-gold hover:bg-gold/30 transition-colors mr-2"
               >
                 开启推送通知
               </button>
@@ -156,7 +156,7 @@ export function RiskAlertPanel() {
               <button
                 key={level}
                 onClick={() => setFilterLevel(level)}
-                className={`text-[10px] px-2 py-1 rounded transition-colors ${
+                className={`text-xs px-2 py-1 rounded transition-colors ${
                   filterLevel === level ? 'bg-primary/20 text-primary font-medium' : 'bg-muted/30 text-muted-foreground'
                 }`}
               >
@@ -173,20 +173,20 @@ export function RiskAlertPanel() {
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="p-3 rounded bg-profit/5 border border-profit/20 text-center">
             <p className="text-lg font-mono font-bold text-profit">{allAlerts.filter((a) => a.level === 'normal').length}</p>
-            <p className="text-[10px] text-muted-foreground">一级常规</p>
+            <p className="text-xs text-muted-foreground">一级常规</p>
           </div>
-          <div className="p-3 rounded bg-amber/5 border border-amber/20 text-center">
-            <p className="text-lg font-mono font-bold text-amber">{allAlerts.filter((a) => a.level === 'yellow').length}</p>
-            <p className="text-[10px] text-muted-foreground">二级黄色</p>
+          <div className="p-3 rounded bg-gold/5 border border-gold/20 text-center">
+            <p className="text-lg font-mono font-bold text-gold">{allAlerts.filter((a) => a.level === 'yellow').length}</p>
+            <p className="text-xs text-muted-foreground">二级黄色</p>
           </div>
           <div className="p-3 rounded bg-loss/5 border border-loss/20 text-center">
             <p className="text-lg font-mono font-bold text-loss">{allAlerts.filter((a) => a.level === 'red').length}</p>
-            <p className="text-[10px] text-muted-foreground">三级红色</p>
+            <p className="text-xs text-muted-foreground">三级红色</p>
           </div>
         </div>
 
         {/* 动态扫描状态 */}
-        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{loading ? '扫描中...' : scanResult ? `上次扫描：${scanResult.scanTime?.split('T')[1]?.split('.')[0] || '--'}` : '待扫描'}</span>
           <button onClick={rescan} className="text-indigo hover:underline">重新扫描</button>
         </div>
@@ -199,24 +199,24 @@ export function RiskAlertPanel() {
           return (
             <div key={alert.id} className={`p-4 rounded-lg border ${style.border} ${style.bg} alert-slide-in`}>
               <div className="flex items-center gap-2 mb-2">
-                <span className={`text-[9px] px-2 py-0.5 rounded font-medium ${style.badge}`}>
+                <span className={`text-[11px] px-2 py-0.5 rounded font-medium ${style.badge}`}>
                   {style.label}
                 </span>
                 <span className="text-xs font-medium text-foreground">{alert.title}</span>
                 {alert.fundCode && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted/30 text-muted-foreground font-mono">
+                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-muted/30 text-muted-foreground font-mono">
                     {alert.fundCode}
                   </span>
                 )}
               </div>
               <p className="text-xs text-foreground/80 leading-relaxed mb-2">{alert.message}</p>
               <div className="pt-2 border-t border-border/30">
-                <p className="text-[10px] text-amber">
+                <p className="text-xs text-gold">
                   <span className="text-muted-foreground mr-1">处置方案：</span>
                   {alert.action}
                 </p>
                 {alert.knowledgeLink && (
-                  <p className="text-[10px] text-indigo mt-1">
+                  <p className="text-xs text-indigo mt-1">
                     关联学习：{alert.knowledgeLink}
                   </p>
                 )}
@@ -241,7 +241,7 @@ export function RiskAlertPanel() {
                   <span className="text-[8px] px-1 py-0.5 rounded bg-loss/20 text-loss">硬止损</span>
                   <span className="text-xs font-medium text-foreground">{h.name}</span>
                 </div>
-                <div className="space-y-1 text-[10px]">
+                <div className="space-y-1 text-xs">
                   <p><span className="text-blue-400">成本:{pp.costPrice}</span> <span className="text-loss">SL:{pp.sl}</span></p>
                   <p><span className="text-purple-400">TP:{pp.tp || '--'}</span> {pp.tStop?.enabled && <span className="text-purple-400">动态回撤</span>}</p>
                   <p className="text-muted-foreground">距SL缓冲: <span className={Number(bufferPct) < 5 ? 'text-loss font-medium' : 'text-profit'}>{bufferPct}%</span></p>
@@ -254,14 +254,14 @@ export function RiskAlertPanel() {
               <span className="text-[8px] px-1 py-0.5 rounded bg-profit/20 text-profit">建仓</span>
               <span className="text-xs font-medium text-foreground">补仓间距</span>
             </div>
-            <p className="text-[10px] text-muted-foreground">同基金两次补仓≥10交易日，至少再跌5%才考虑第二批</p>
+            <p className="text-xs text-muted-foreground">同基金两次补仓≥10交易日，至少再跌5%才考虑第二批</p>
           </div>
-          <div className="p-3 rounded border border-amber/30 bg-amber/5">
+          <div className="p-3 rounded border border-gold/30 bg-gold/5">
             <div className="flex items-center gap-1 mb-1">
-              <span className="text-[8px] px-1 py-0.5 rounded bg-amber/20 text-amber">纪律</span>
+              <span className="text-[8px] px-1 py-0.5 rounded bg-gold/20 text-gold">纪律</span>
               <span className="text-xs font-medium text-foreground">助手只亮灯</span>
             </div>
-            <p className="text-[10px] text-muted-foreground">所有价位只做观察+提示，助手不能替你点买卖按钮</p>
+            <p className="text-xs text-muted-foreground">所有价位只做观察+提示，助手不能替你点买卖按钮</p>
           </div>
         </div>
       </div>

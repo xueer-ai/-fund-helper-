@@ -97,7 +97,7 @@ export function PushSettings({ onPushToggle }: PushSettingsProps) {
       {/* PushPlus 配置 */}
       {activeTab === 'pushplus' && (
         <div className="space-y-2">
-          <div className="text-[10px] text-emerald-400 font-medium">
+          <div className="text-xs text-emerald-400 font-medium">
             推荐 · 免费200条/天 · 支持一对多推送
           </div>
           <input
@@ -107,7 +107,7 @@ export function PushSettings({ onPushToggle }: PushSettingsProps) {
             placeholder="输入 PushPlus Token"
             className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-[11px] text-gray-200 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
           />
-          <ol className="text-[10px] text-gray-500 space-y-0.5 ml-3 list-decimal">
+          <ol className="text-xs text-gray-500 space-y-0.5 ml-3 list-decimal">
             <li>微信搜索关注公众号「PushPlus推送加」</li>
             <li>浏览器访问 pushplus.plus 获取 Token</li>
             <li>填入 Token → 点测试 → 微信收到消息即成功</li>
@@ -127,7 +127,7 @@ export function PushSettings({ onPushToggle }: PushSettingsProps) {
       {/* Server酱 配置 */}
       {activeTab === 'serverchan' && (
         <div className="space-y-2">
-          <div className="text-[10px] text-gray-400 font-medium">
+          <div className="text-xs text-gray-400 font-medium">
             备用通道 · 免费5条/天
           </div>
           <input
@@ -137,7 +137,7 @@ export function PushSettings({ onPushToggle }: PushSettingsProps) {
             placeholder="输入 Server酱 SendKey"
             className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-[11px] text-gray-200 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
           />
-          <ol className="text-[10px] text-gray-500 space-y-0.5 ml-3 list-decimal">
+          <ol className="text-xs text-gray-500 space-y-0.5 ml-3 list-decimal">
             <li>微信搜索关注公众号「Server酱」</li>
             <li>浏览器访问 sct.ftqq.com 获取 SendKey</li>
             <li>填入 SendKey → 点测试 → 微信收到消息即成功</li>
@@ -156,7 +156,7 @@ export function PushSettings({ onPushToggle }: PushSettingsProps) {
 
       {/* 测试结果 */}
       {testResult && (
-        <div className={`p-2 rounded-md text-[10px] ${
+        <div className={`p-2 rounded-md text-xs ${
           testResult.success ? 'bg-emerald-900/30 text-emerald-400' : 'bg-red-900/30 text-red-400'
         }`}>
           {testResult.success
@@ -176,8 +176,8 @@ export function PushSettings({ onPushToggle }: PushSettingsProps) {
 
       {/* 推送规则说明 */}
       <div className="border-t border-gray-800 pt-2 space-y-1">
-        <div className="text-[10px] text-gray-500 font-medium">推送规则</div>
-        <div className="text-[10px] text-gray-600 space-y-0.5">
+        <div className="text-xs text-gray-500 font-medium">推送规则</div>
+        <div className="text-xs text-gray-600 space-y-0.5">
           <div>🔴 止损预警 — 不受冷却限制，随时推送</div>
           <div>🟡 止盈/风控 — 同基金{PUSH_COOLDOWN_HOURS}h内只推1次</div>
           <div>🟢 买点信号 — 同基金{PUSH_COOLDOWN_HOURS}h内只推1次</div>
@@ -189,7 +189,7 @@ export function PushSettings({ onPushToggle }: PushSettingsProps) {
       {/* 当前状态 */}
       {status && (
         <div className="border-t border-gray-800 pt-2">
-          <div className="text-[10px] text-gray-500">
+          <div className="text-xs text-gray-500">
             主通道：<span className={status.configured ? 'text-emerald-400' : 'text-red-400'}>
               {status.configured
                 ? status.primaryChannel === 'pushplus' ? 'PushPlus ✅' : 'Server酱 ✅'

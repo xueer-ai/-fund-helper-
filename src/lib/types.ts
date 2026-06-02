@@ -82,6 +82,7 @@ export type BuySignalTier = 1 | 2 | 3;
 
 export interface BuySignal {
   fundCode: string;
+  fundName: string;
   tier: BuySignalTier;
   tierName: string;
   threshold: number;
