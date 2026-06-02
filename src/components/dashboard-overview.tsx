@@ -458,7 +458,7 @@ export function DashboardOverview() {
             </div>
             <canvas
               ref={chartRef}
-              className="w-full rounded-lg bg-[#0d1117]"
+              className="w-full rounded-lg bg-[#1e2230]"
               style={{ height: '200px' }}
             />
             {/* 买卖点图例 */}
