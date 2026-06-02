@@ -2,214 +2,247 @@
 
 import { useState, useEffect } from 'react';
 
+// 三大周期数据
+const CYCLES = [
+  {
+    name: 'AI科技主线周期',
+    desc: 'AI赛道从萌芽→主升→回调→再主升的轮动规律，当前处于主升浪回调期',
+    stage: '主升浪回调期',
+  },
+  {
+    name: '美联储加息周期',
+    desc: '加息→缩表→降息的完整周期，影响全球科技股估值中枢',
+    stage: '加息尾声/降息预期期',
+  },
+  {
+    name: '大宗商品油价周期',
+    desc: '油价波动影响通胀预期与货币政策节奏，油价破90触发三级预警',
+    stage: '中位震荡期',
+  },
+];
+
+// 投资铁律完整清单
+const IRON_RULES = [
+  { title: '不见兔子不撒鹰', desc: '右侧没有出现信号不执行，没有到阈值绝不手动', source: '源哥言商投资铁律' },
+  { title: '分批建仓3-3-4法则', desc: '第一批30%试错，第二批30%确认，第三批40%加仓，杜绝一次性满仓', source: '源哥言商建仓方法论' },
+  { title: '追高是亏损根源', desc: '严守净值红线，159140>1.37、022364>5.68劝阻一切新开仓', source: '源哥言商风控控制' },
+  { title: '时间止损比价格止损更重要', desc: '2026年11月节点：未创新高则AI仓位压至20%以下', source: '源哥言商周期理论' },
+  { title: '卖的5大层次', desc: '从情绪→卖故事→卖产品→卖标准→卖规则，理解商业底层逻辑', source: '源哥言商商业思维' },
+  { title: '人生九段论与财富积累', desc: '理解不同段位对应的财富积累方式，投资是七段以上的财富路径', source: '源哥言商人生智慧' },
+  { title: '现金是资产守恒底线', desc: '流动性资产的核心价值，要留备用金半年不动就是守恒', source: '源哥言商财富管理' },
+];
+
+// 学习测验题
+const QUIZ_QUESTIONS = [
+  {
+    question: '美联储加息周期当前处于哪个阶段？',
+    options: ['A. 加息尾声/降息预期期', 'B. 主升浪回调期', 'C. 底部震荡期', 'D. 上升通道期'],
+    correct: 0,
+  },
+  {
+    question: '159140黄金坑第一买点触发条件是？',
+    options: ['A. 净值<1.37（回撤20%）', 'B. 净值<1.28（回撤25%）', 'C. 净值<1.42'],
+    correct: 0,
+  },
+  {
+    question: '三大周期中，哪个直接影响AI赛道估值中枢？',
+    options: ['A. 美联储加息周期', 'B. 大宗商品油价周期', 'C. AI科技主线周期', 'D. 以上都是'],
+    correct: 3,
+  },
+];
+
 export default function LearningPanel() {
-  const [activeTest, setActiveTest] = useState<number | null>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [showResult, setShowResult] = useState(false);
+  const [selectedAnswers, setSelectedAnswers] = useState<number[]>([-1, -1, -1]);
+  const [submitted, setSubmitted] = useState<boolean[]>([false, false, false]);
+  const [readConfirmed, setReadConfirmed] = useState(false);
+  const [progress, setProgress] = useState({ morning: '', noon: '', close: '' });
 
-  // 今日学习主题
-  const todayTopic = '源哥三大周期理论 · 当日应用';
+  useEffect(() => {
+    // 模拟学习进度
+    setProgress({
+      morning: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      noon: '00:00',
+      close: '00:00',
+    });
+  }, []);
 
-  // 测试题
-  const testQuestions = [
-    {
-      question: '源哥三大周期中，当前对AI赛道影响权重最大的是？',
-      options: [
-        'A. 美联储加息周期',
-        'B. AI科技主线周期',
-        'C. 大宗商品/油价周期',
-      ],
-      correct: 1,
-      explanation: 'AI科技主线周期直接决定赛道走势，当前处于上升周期，算力与应用端持续受益。',
-    },
-    {
-      question: '3-3-4分批建仓法的核心目的是？',
-      options: [
-        'A. 追求最大收益',
-        'B. 杜绝一次性满仓',
-        'C. 减少交易手续费',
-      ],
-      correct: 1,
-      explanation: '分批建仓的核心是控制风险，避免在单一时点全部投入，3-3-4的比例确保有充足弹药应对后续波动。',
-    },
-    {
-      question: '2026年11月的时间止损铁律要求？',
-      options: [
-        'A. AI仓位加至60%',
-        'B. AI仓位压至20%以下',
-        'C. 全部清仓不保留',
-      ],
-      correct: 1,
-      explanation: '11月未创新高，AI仓位压至20%以下，非AI赛道全部清仓，资金归集等待下一轮周期。',
-    },
-  ];
+  const handleSelect = (qIndex: number, optIndex: number) => {
+    if (submitted[qIndex]) return;
+    const newAnswers = [...selectedAnswers];
+    newAnswers[qIndex] = optIndex;
+    setSelectedAnswers(newAnswers);
+  };
 
-  // 知识干货
-  const cycleKnowledge = [
-    { name: 'AI科技主线周期', desc: '大模型训练→算力扩张→应用落地，当前处于算力向应用传导阶段' },
-    { name: '美联储加息周期', desc: '降息预期延后至9月，关注议息会议措辞变化对成长股估值影响' },
-    { name: '大宗商品/油价周期', desc: '油价中枢下移至70-80区间，通胀压力暂缓，有利于货币政策空间' },
-  ];
-
-  const ironRules = [
-    '不见兔子不撒鹰 · 严格按触发条件执行',
-    '分批建仓3-3-4 · 杜绝一次性满仓',
-    '追高是亏损根源 · 严守净值红线',
-    '时间止损比价格止损更重要 · 11月节点',
-    '卖的5大层次 · 从卖情绪到卖规则',
-    '人生九段论与财富积累的对应关系',
-    '流动性资产的核心价值 · 现金守恒定律',
-  ];
-
-  // 学习进度
-  const progressItems = [
-    { label: '常规复习', progress: 65 },
-    { label: '本周复习', progress: 40 },
-    { label: '半年复习', progress: 15 },
-    { label: '收盘复盘', progress: 0 },
-  ];
-
-  const handleAnswer = (questionIdx: number, answerIdx: number) => {
-    setActiveTest(questionIdx);
-    setSelectedAnswer(answerIdx);
-    setShowResult(true);
+  const handleSubmit = (qIndex: number) => {
+    if (selectedAnswers[qIndex] === -1) return;
+    const newSubmitted = [...submitted];
+    newSubmitted[qIndex] = true;
+    setSubmitted(newSubmitted);
   };
 
   return (
-    <div className="grid grid-cols-5 gap-4">
-      {/* 左侧：学习测试区 */}
-      <div className="col-span-3 space-y-4">
-        {/* 今日主题 */}
-        <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-[#e5e7eb]">
-            <h3 className="text-sm font-bold text-[#1f2937]">
-              今日学习主题
-            </h3>
+    <div className="space-y-4">
+      {/* 免责声明 */}
+      <div className="bg-[#6366f1]/5 rounded-lg border border-[#6366f1]/20 px-4 py-2">
+        <p className="text-xs text-[#4338ca]">
+          重要提示: 内容仅为逻辑推演复盘, 不构成任何基金、理财投资建议, 市场有波动, 入市需谨慎
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        {/* 左侧：周期理论学习 + 学习检验 */}
+        <div className="space-y-4">
+          {/* 源哥周期理论学习 */}
+          <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-[#e5e7eb]">
+              <h3 className="text-sm font-bold text-[#1f2937]">
+                源哥周期理论学习：美联储加息周期
+              </h3>
+            </div>
+            <div className="p-4 space-y-2">
+              <p className="text-xs text-[#6b7280]">
+                加息→缩表→降息的完整周期，影响全球科技股估值中枢
+              </p>
+              <div className="space-y-1.5">
+                <p className="text-xs text-[#1f2937]">
+                  <span className="font-medium text-[#6366f1]">当前阶段：</span>加息尾声/降息预期期
+                </p>
+                <p className="text-xs text-[#1f2937]">
+                  <span className="font-medium text-[#6366f1]">对AI赛道影响：</span>加息压制估值，降息利好成长，CME预期是前瞻指标
+                </p>
+              </div>
+              <div className="mt-3 pt-3 border-t border-[#f3f4f6]">
+                <p className="text-xs font-medium text-[#374151] mb-1.5">必掌握要点：</p>
+                <ol className="space-y-1 text-xs text-[#6b7280] list-decimal list-inside">
+                  <li>美联储加息周期核心定义与轮动规律</li>
+                  <li>当前周期阶段判断方法</li>
+                  <li>对159140/022364净值走势的影响权重</li>
+                </ol>
+              </div>
+              <button
+                onClick={() => setReadConfirmed(true)}
+                className={`mt-2 px-3 py-1.5 rounded text-xs font-medium ${
+                  readConfirmed
+                    ? 'bg-[#6366f1] text-white'
+                    : 'bg-[#6366f1]/10 text-[#6366f1] hover:bg-[#6366f1]/20'
+                }`}
+              >
+                我已阅读
+              </button>
+            </div>
           </div>
-          <div className="p-4">
-            <div className="p-3 rounded-lg bg-[#6366f1]/5 border border-[#6366f1]/20">
-              <p className="text-sm font-medium text-[#6366f1]">
-                {todayTopic}
-              </p>
-              <p className="text-xs text-[#6b7280] mt-1">
-                关联基金操作：周期轮动决定建仓节奏，当前布局期耐心等待黄金坑信号
-              </p>
+
+          {/* 学习检验 */}
+          <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-[#e5e7eb]">
+              <h3 className="text-sm font-bold text-[#1f2937]">学习检验</h3>
+            </div>
+            <div className="p-4 space-y-4">
+              {QUIZ_QUESTIONS.map((q, qIndex) => (
+                <div key={qIndex}>
+                  <p className="text-xs font-medium text-[#1f2937] mb-2">{q.question}</p>
+                  <div className="space-y-1.5">
+                    {q.options.map((opt, optIndex) => {
+                      const isSelected = selectedAnswers[qIndex] === optIndex;
+                      const isCorrect = submitted[qIndex] && optIndex === q.correct;
+                      const isWrong = submitted[qIndex] && isSelected && optIndex !== q.correct;
+
+                      return (
+                        <button
+                          key={optIndex}
+                          onClick={() => handleSelect(qIndex, optIndex)}
+                          className={`w-full text-left px-3 py-2 rounded text-xs border transition-colors ${
+                            isCorrect
+                              ? 'bg-[#10b981]/10 border-[#10b981] text-[#10b981]'
+                              : isWrong
+                              ? 'bg-[#ef4444]/10 border-[#ef4444] text-[#ef4444]'
+                              : isSelected
+                              ? 'bg-[#6366f1]/10 border-[#6366f1] text-[#6366f1]'
+                              : 'bg-white border-[#e5e7eb] text-[#4b5563] hover:border-[#6366f1]/50'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => handleSubmit(qIndex)}
+                    disabled={selectedAnswers[qIndex] === -1}
+                    className="mt-2 px-3 py-1.5 rounded text-xs font-medium bg-[#6366f1] text-white disabled:opacity-40"
+                  >
+                    提交答案
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* 学习测试 */}
-        <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-[#e5e7eb]">
-            <h3 className="text-sm font-bold text-[#1f2937]">
-              学习检验 · 3题
-            </h3>
-          </div>
-          <div className="p-4 space-y-4">
-            {testQuestions.map((q, qi) => (
-              <div key={qi} className="space-y-2">
-                <p className="text-sm font-medium text-[#1f2937]">
-                  {qi + 1}. {q.question}
-                </p>
-                <div className="space-y-1.5">
-                  {q.options.map((opt, oi) => {
-                    const isSelected = activeTest === qi && selectedAnswer === oi;
-                    const isCorrect = oi === q.correct;
-                    const showFeedback = activeTest === qi && showResult;
-
-                    return (
-                      <button
-                        key={oi}
-                        onClick={() => handleAnswer(qi, oi)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors ${
-                          showFeedback && isCorrect
-                            ? 'bg-[#10b981]/10 border border-[#10b981]/30 text-[#10b981]'
-                            : showFeedback && isSelected && !isCorrect
-                            ? 'bg-[#ef4444]/10 border border-[#ef4444]/30 text-[#ef4444]'
-                            : 'bg-[#f9fafb] border border-[#e5e7eb] text-[#374151] hover:bg-[#f3f4f6]'
-                        }`}
-                      >
-                        {opt}
-                      </button>
-                    );
-                  })}
+        {/* 右侧：三大周期 + 铁律清单 */}
+        <div className="space-y-4">
+          {/* 源哥三大周期 */}
+          <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-[#e5e7eb]">
+              <h3 className="text-sm font-bold text-[#1f2937]">源哥三大周期</h3>
+            </div>
+            <div className="p-4 space-y-3">
+              {CYCLES.map((cycle, i) => (
+                <div key={i} className="p-3 rounded-lg bg-[#f9fafb] border border-[#e5e7eb]">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-[#1f2937]">{cycle.name}</p>
+                    <span className="px-2 py-0.5 rounded text-xs bg-[#6366f1]/10 text-[#6366f1] font-medium">
+                      {cycle.stage}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#6b7280] mt-1">{cycle.desc}</p>
                 </div>
-                {activeTest === qi && showResult && (
-                  <p
-                    className={`text-xs p-2 rounded ${
-                      selectedAnswer === q.correct
-                        ? 'bg-[#10b981]/5 text-[#10b981]'
-                        : 'bg-[#ef4444]/5 text-[#ef4444]'
-                    }`}
-                  >
-                    {selectedAnswer === q.correct ? '✓ 正确！' : '✗ 错误。'}
-                    {q.explanation}
-                  </p>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          {/* 源哥投资铁律完整清单 */}
+          <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-[#e5e7eb]">
+              <h3 className="text-sm font-bold text-[#1f2937]">源哥投资铁律完整清单</h3>
+            </div>
+            <div className="p-4 space-y-3">
+              {IRON_RULES.map((rule, i) => (
+                <div key={i} className="py-2 border-b border-[#f3f4f6] last:border-b-0">
+                  <div className="flex items-start gap-2">
+                    <span className="flex-shrink-0 w-5 h-5 rounded bg-[#6366f1]/10 text-[#6366f1] text-xs font-bold flex items-center justify-center mt-0.5">
+                      {i + 1}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-[#1f2937]">{rule.title}</p>
+                      <p className="text-xs text-[#6b7280] mt-0.5">{rule.desc}</p>
+                      <p className="text-[10px] text-[#9ca3af] mt-0.5">出处：{rule.source}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 右侧：知识干货区 */}
-      <div className="col-span-2 space-y-4">
-        {/* 三大周期 */}
-        <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-[#e5e7eb]">
-            <h3 className="text-sm font-bold text-[#1f2937]">三大周期</h3>
-          </div>
-          <div className="p-4 space-y-2.5">
-            {cycleKnowledge.map((item, i) => (
-              <div key={i} className="p-2.5 rounded bg-[#f9fafb] border border-[#e5e7eb]">
-                <p className="text-xs font-medium text-[#6366f1]">
-                  {item.name}
-                </p>
-                <p className="text-xs text-[#6b7280] mt-0.5">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 投资铁律清单 */}
-        <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-[#e5e7eb]">
-            <h3 className="text-sm font-bold text-[#1f2937]">投资铁律清单</h3>
-          </div>
-          <div className="p-4 space-y-1.5">
-            {ironRules.map((rule, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#6366f1] flex-shrink-0" />
-                <span className="text-[#374151]">{rule}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* 底部：学习进度 */}
-      <div className="col-span-5 bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
+      {/* 今日学习进度 */}
+      <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
         <div className="px-4 py-2.5 border-b border-[#e5e7eb]">
-          <h3 className="text-sm font-bold text-[#1f2937]">学习进度追踪</h3>
+          <h3 className="text-sm font-bold text-[#1f2937]">今日学习进度</h3>
         </div>
-        <div className="p-4">
-          <div className="grid grid-cols-4 gap-4">
-            {progressItems.map((item) => (
-              <div key={item.label}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-[#6b7280]">{item.label}</span>
-                  <span className="text-xs font-mono text-[#6b7280]">
-                    {item.progress}%
-                  </span>
-                </div>
-                <div className="w-full h-2 bg-[#f3f4f6] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#6366f1] rounded-full transition-all"
-                    style={{ width: `${item.progress}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+        <div className="grid grid-cols-3 divide-x divide-[#e5e7eb]">
+          <div className="p-3 text-center">
+            <p className="text-xs text-[#6b7280]">晨读学习</p>
+            <p className="text-sm font-mono text-[#1f2937] mt-1">{progress.morning || '00:00'}</p>
+          </div>
+          <div className="p-3 text-center">
+            <p className="text-xs text-[#6b7280]">午间复习</p>
+            <p className="text-sm font-mono text-[#9ca3af] mt-1">{progress.noon || '00:00'}</p>
+          </div>
+          <div className="p-3 text-center">
+            <p className="text-xs text-[#6b7280]">收盘复盘</p>
+            <p className="text-sm font-mono text-[#9ca3af] mt-1">{progress.close || '00:00'}</p>
           </div>
         </div>
       </div>

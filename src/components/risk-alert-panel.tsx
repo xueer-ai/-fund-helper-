@@ -2,211 +2,217 @@
 
 import { useState } from 'react';
 
-interface FundData {
-  code: string;
-  name: string;
-  nav: number;
-  lastNav: number;
-  change: number;
+// 预警等级类型
+type AlertLevel = 'all' | 'green' | 'yellow' | 'red';
+
+interface Alert {
+  id: string;
+  level: 'green' | 'yellow' | 'red';
+  title: string;
+  fundName: string;
+  content: string;
+  action: string;
+  learning: string;
 }
 
-interface RiskAlertPanelProps {
-  funds: FundData[];
-}
-
-type AlertLevel = 'green' | 'yellow' | 'red';
-
-// 预警数据
-const ALERTS = [
+// 模拟预警数据
+const ALERTS: Alert[] = [
   {
-    id: 1,
-    level: 'green' as AlertLevel,
-    title: '黄金坑买点触发',
-    target: '159140 科创AI',
-    condition: '净值≤1.37（5.12高点回调20%）',
-    action: '分2-3天买入12%总仓位，执行3-3-4第一步',
-    knowledge: '分批建仓铁律 · 不见兔子不撒鹰',
+    id: '1',
+    level: 'green',
+    title: '华夏芯片浮盈提醒',
+    fundName: '华夏国证半导体芯片ETF联接A',
+    content: '最新浮盈44.43%，距止盈线1.5613已超，根据40%-60%底仓逻辑可考虑分批减仓',
+    action: '持仓不变，距止盈还有空间，保留底仓等待回调加仓窗口',
+    learning: '分批止盈铁律',
   },
   {
-    id: 2,
-    level: 'green' as AlertLevel,
-    title: '华夏芯片小幅止盈提示',
-    target: '012414 华夏芯片',
-    condition: '浮盈≥10%且接近TP目标',
-    action: '可考虑分批兑现，锁定部分利润',
-    knowledge: '财富变现与流动性管理',
+    id: '2',
+    level: 'green',
+    title: '宝盈转型动力浮盈提醒',
+    fundName: '宝盈转型动力灵活配置混合A',
+    content: '最新浮盈16.65%，接近+10%止盈目标，关注趋势线',
+    action: '持仓不变，关注收盘是否跌破20MA',
+    learning: '趋势跟随策略',
   },
   {
-    id: 3,
-    level: 'yellow' as AlertLevel,
-    title: '平安半导体浮亏接近止损',
-    target: '019458 平安半导体',
-    condition: '浮亏接近-10%（距止损线<5%）',
-    action: '核对收盘价是否有效跌破1.3455，若跌破执行减仓/清仓',
-    knowledge: '价格止损铁律 · 纪律大于天',
+    id: '3',
+    level: 'green',
+    title: '博时新能源平本附近',
+    fundName: '博时新能源汽车主题混合A',
+    content: '最新浮亏-0.45%，处于平本附近，暂无操作信号',
+    action: '持仓观望，不加仓不减仓',
+    learning: '底仓持有策略',
   },
   {
-    id: 4,
-    level: 'yellow' as AlertLevel,
-    title: '距11月时间止损仅剩不足6个月',
-    target: '全部AI持仓',
-    condition: '时间止损倒计时',
-    action: '关注行情是否创新高，未创新高则11月压缩AI仓位至20%以下',
-    knowledge: '时间止损铁律 · 时间>价格',
+    id: '4',
+    level: 'green',
+    title: '买点信号待确认',
+    fundName: '159140 科创AI / 022364 永赢科技',
+    content: '当前净值均高于黄金坑阈值，买点尚未触发',
+    action: '继续等待，不见兔子不撒鹰',
+    learning: '不见兔子不撒鹰',
   },
   {
-    id: 5,
-    level: 'red' as AlertLevel,
-    title: '平安半导体触及硬止损线',
-    target: '019458 平安半导体',
-    condition: '净值≤1.3455（-10%硬止损）',
-    action: '🔴 认错警戒！核对收盘价确认有效跌破→执行减仓/清仓，暂停一切加仓',
-    knowledge: '价格止损铁律 · 纪律大于天',
-  },
-  {
-    id: 6,
-    level: 'red' as AlertLevel,
-    title: '极端风险：油价破90/美联储加息50bp',
-    target: '全部持仓',
-    condition: '外围重大利空事件',
-    action: '优先赎回宝盈/新能源，AI总仓位降至30%以内',
-    knowledge: '极端行情应对 · 现金财富守恒定律',
+    id: '5',
+    level: 'red',
+    title: '平安半导体破止损线',
+    fundName: '平安半导体领航精选混合C',
+    content: '当前净值1.3400已跌破止损线¥1.3455，浮亏-10.37%，触发认错警戒',
+    action: '1.核对收盘价是否有效跌破 2.若确认跌破→执行减仓/清仓计划 3.暂停一切补仓操作',
+    learning: '价格止损铁律',
   },
 ];
 
-// 风险标的速览
+// 风险标的
 const RISK_TARGETS = [
-  { code: '019458', name: '平安半导体', sl: 1.3455, riskNote: '浮亏接近止损' },
-  { code: '015556', name: '博时新能源', sl: 0.9635, riskNote: '底仓观望' },
+  {
+    name: '华夏国证半导体芯片ETF联接A',
+    cost: '1.4194',
+    nav: '2.0500',
+    pnl: '+44.43%',
+    pnlColor: 'text-[#10b981]',
+    note: '右侧盈利，动态止盈保护中',
+  },
+  {
+    name: '平安半导体领航精选混合C',
+    cost: '1.4950',
+    nav: '1.3400',
+    pnl: '-10.37%',
+    pnlColor: 'text-[#ef4444]',
+    note: '已破止损线，认错警戒',
+  },
+  {
+    name: '宝盈转型动力灵活配置混合A',
+    cost: '3.5577',
+    nav: '4.1500',
+    pnl: '+16.65%',
+    pnlColor: 'text-[#10b981]',
+    note: '趋势跟随，关注20MA',
+  },
+  {
+    name: '博时新能源汽车主题混合A',
+    cost: '1.0949',
+    nav: '1.0900',
+    pnl: '-0.45%',
+    pnlColor: 'text-[#ef4444]',
+    note: '平本附近，补仓闸门关闭',
+  },
 ];
 
-const LEVEL_CONFIG = {
-  green: {
-    label: '一级常规',
-    color: 'bg-[#10b981]',
-    bgColor: 'bg-[#10b981]/5',
-    borderColor: 'border-[#10b981]/20',
-    textColor: 'text-[#10b981]',
-    tagBg: 'bg-[#10b981]',
-  },
-  yellow: {
-    label: '二级黄色',
-    color: 'bg-[#f59e0b]',
-    bgColor: 'bg-[#f59e0b]/5',
-    borderColor: 'border-[#f59e0b]/20',
-    textColor: 'text-[#f59e0b]',
-    tagBg: 'bg-[#f59e0b]',
-  },
-  red: {
-    label: '三级红色',
-    color: 'bg-[#ef4444]',
-    bgColor: 'bg-[#ef4444]/5',
-    borderColor: 'border-[#ef4444]/20',
-    textColor: 'text-[#ef4444]',
-    tagBg: 'bg-[#ef4444]',
-  },
-};
+export default function RiskAlertPanel() {
+  const [filter, setFilter] = useState<AlertLevel>('all');
+  const [lastScan, setLastScan] = useState(new Date().toLocaleTimeString('zh-CN'));
 
-export default function RiskAlertPanel({ funds }: RiskAlertPanelProps) {
-  const [activeLevel, setActiveLevel] = useState<AlertLevel | 'all'>('all');
+  const filteredAlerts = filter === 'all' ? ALERTS : ALERTS.filter((a) => a.level === filter);
+  const greenCount = ALERTS.filter((a) => a.level === 'green').length;
+  const yellowCount = ALERTS.filter((a) => a.level === 'yellow').length;
+  const redCount = ALERTS.filter((a) => a.level === 'red').length;
 
-  const filteredAlerts =
-    activeLevel === 'all'
-      ? ALERTS
-      : ALERTS.filter((a) => a.level === activeLevel);
-
-  const levelCounts = {
-    green: ALERTS.filter((a) => a.level === 'green').length,
-    yellow: ALERTS.filter((a) => a.level === 'yellow').length,
-    red: ALERTS.filter((a) => a.level === 'red').length,
+  const handleRescan = () => {
+    setLastScan(new Date().toLocaleTimeString('zh-CN'));
   };
 
   return (
     <div className="space-y-4">
-      {/* 预警等级标签栏 */}
+      {/* 免责声明 */}
+      <div className="bg-[#fff7ed] rounded-lg border border-[#fed7aa] px-4 py-2">
+        <p className="text-xs text-[#9a3412]">
+          重要提示: 内容仅为逻辑推演复盘, 不构成任何基金、理财投资建议, 市场有波动, 入市需谨慎
+        </p>
+      </div>
+
+      {/* 分级预警机制 */}
       <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#e5e7eb]">
-          <button
-            onClick={() => setActiveLevel('all')}
-            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-              activeLevel === 'all'
-                ? 'bg-[#1f2937] text-white'
-                : 'bg-[#f3f4f6] text-[#6b7280] hover:bg-[#e5e7eb]'
+        <div className="px-4 py-2.5 border-b border-[#e5e7eb] flex items-center justify-between">
+          <h3 className="text-sm font-bold text-[#1f2937]">分级预警机制</h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRescan}
+              className="text-xs text-[#3b82f6] font-medium hover:underline"
+            >
+              重新扫描
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 divide-x divide-[#e5e7eb]">
+          <div className="p-3 text-center bg-[#10b981]/5">
+            <p className="text-xs font-medium text-[#10b981]">一级常规</p>
+            <p className="text-2xl font-bold text-[#10b981]">{greenCount}</p>
+          </div>
+          <div className="p-3 text-center bg-[#f59e0b]/5">
+            <p className="text-xs font-medium text-[#f59e0b]">二级黄色</p>
+            <p className="text-2xl font-bold text-[#f59e0b]">{yellowCount}</p>
+          </div>
+          <div className="p-3 text-center bg-[#ef4444]/5">
+            <p className="text-xs font-medium text-[#ef4444]">三级红色</p>
+            <p className="text-2xl font-bold text-[#ef4444]">{redCount}</p>
+          </div>
+        </div>
+        <div className="px-4 py-2 border-t border-[#e5e7eb] flex items-center justify-between">
+          <p className="text-xs text-[#9ca3af]">上次扫描: {lastScan}</p>
+          <div className="flex gap-1">
+            {(['all', 'green', 'yellow', 'red'] as AlertLevel[]).map((lvl) => {
+              const label = lvl === 'all' ? '全部' : lvl === 'green' ? `常规(${greenCount})` : lvl === 'yellow' ? `黄色(${yellowCount})` : `红色(${redCount})`;
+              return (
+                <button
+                  key={lvl}
+                  onClick={() => setFilter(lvl)}
+                  className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                    filter === lvl
+                      ? 'bg-[#6366f1] text-white'
+                      : 'bg-[#f3f4f6] text-[#6b7280] hover:bg-[#e5e7eb]'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* 预警详情列表 */}
+      <div className="space-y-3">
+        {filteredAlerts.map((alert) => (
+          <div
+            key={alert.id}
+            className={`rounded-lg border overflow-hidden ${
+              alert.level === 'red'
+                ? 'border-[#fca5a5] bg-[#fef2f2]'
+                : alert.level === 'yellow'
+                ? 'border-[#fde68a] bg-[#fffbeb]'
+                : 'border-[#e5e7eb] bg-white'
             }`}
           >
-            全部 ({ALERTS.length})
-          </button>
-          {(['green', 'yellow', 'red'] as AlertLevel[]).map((level) => {
-            const config = LEVEL_CONFIG[level];
-            return (
-              <button
-                key={level}
-                onClick={() => setActiveLevel(level)}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                  activeLevel === level
-                    ? `${config.tagBg} text-white`
-                    : 'bg-[#f3f4f6] text-[#6b7280] hover:bg-[#e5e7eb]'
-                }`}
-              >
-                {config.label} ({levelCounts[level]})
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 预警列表 */}
-        <div className="p-4 space-y-3">
-          {filteredAlerts.map((alert) => {
-            const config = LEVEL_CONFIG[alert.level];
-            return (
-              <div
-                key={alert.id}
-                className={`rounded-lg border ${config.borderColor} ${config.bgColor} overflow-hidden`}
-              >
-                <div className="flex items-center gap-2 px-4 py-2">
-                  <span
-                    className={`w-1 h-8 rounded-full ${config.color} flex-shrink-0`}
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-sm font-medium ${config.textColor}`}
-                      >
-                        {alert.title}
-                      </span>
-                      <span className="text-xs text-[#9ca3af]">
-                        {alert.target}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#6b7280] mt-0.5">
-                      触发条件：{alert.condition}
-                    </p>
-                  </div>
-                </div>
-                <div className="px-4 py-2 border-t border-[#e5e7eb]/50 bg-white/50">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-1">
-                      <p className="text-xs font-medium text-[#374151]">
-                        处置方案
-                      </p>
-                      <p className="text-xs text-[#6b7280] mt-0.5">
-                        {alert.action}
-                      </p>
-                    </div>
-                    <div className="flex-shrink-0 text-right">
-                      <p className="text-xs font-medium text-[#6366f1]">
-                        关联学习
-                      </p>
-                      <p className="text-xs text-[#6366f1]/70 mt-0.5">
-                        {alert.knowledge}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            {/* 标题栏 */}
+            <div className={`px-4 py-2 flex items-center gap-2 ${
+              alert.level === 'red' ? 'bg-[#ef4444] text-white' : 'border-b border-inherit'
+            }`}>
+              <span className={`text-xs font-bold ${
+                alert.level === 'red' ? 'text-white' : alert.level === 'yellow' ? 'text-[#f59e0b]' : 'text-[#10b981]'
+              }`}>
+                {alert.level === 'red' ? '【三级红色】' : alert.level === 'yellow' ? '【二级黄色】' : '【常规】'}
+              </span>
+              <span className={`text-sm font-medium ${alert.level === 'red' ? 'text-white' : 'text-[#1f2937]'}`}>
+                {alert.title}
+              </span>
+            </div>
+            <div className="px-4 py-3 space-y-2">
+              <p className="text-xs text-[#4b5563]">{alert.content}</p>
+              <div className="pt-2 border-t border-[#e5e7eb]/50">
+                <p className="text-xs">
+                  <span className="font-medium text-[#6b7280]">处置方案：</span>
+                  <span className="text-[#4b5563]">{alert.action}</span>
+                </p>
+                <p className="text-xs mt-1">
+                  <span className="font-medium text-[#6366f1]">关联学习：</span>
+                  <span className="text-[#6366f1]">{alert.learning}</span>
+                </p>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* 风险标的速览 */}
@@ -214,58 +220,27 @@ export default function RiskAlertPanel({ funds }: RiskAlertPanelProps) {
         <div className="px-4 py-2.5 border-b border-[#e5e7eb]">
           <h3 className="text-sm font-bold text-[#1f2937]">风险标的速览</h3>
         </div>
-        <div className="grid grid-cols-2 gap-3 p-4">
-          {RISK_TARGETS.map((target) => {
-            const liveData = funds.find((f) => f.code === target.code);
-            const currentNav = liveData?.nav ?? 0;
-            const distSL =
-              currentNav && target.sl
-                ? ((currentNav - target.sl) / target.sl) * 100
-                : null;
-
-            return (
-              <div
-                key={target.code}
-                className="p-3 rounded-lg bg-[#f9fafb] border border-[#e5e7eb]"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-[#1f2937]">
-                    {target.name}
-                  </span>
-                  <span className="text-xs text-[#9ca3af] font-mono">
-                    {target.code}
-                  </span>
+        <div className="grid grid-cols-2 gap-4 p-4">
+          {RISK_TARGETS.map((target, i) => (
+            <div key={i} className="p-3 rounded-lg bg-[#f9fafb] border border-[#e5e7eb]">
+              <p className="text-sm font-medium text-[#1f2937]">{target.name}</p>
+              <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <p className="text-[#9ca3af]">成本</p>
+                  <p className="font-mono text-[#4b5563]">{target.cost}</p>
                 </div>
-                <div className="flex items-center gap-4 mt-2">
-                  <div>
-                    <p className="text-xs text-[#9ca3af]">当前净值</p>
-                    <p className="text-sm font-mono font-medium text-[#1f2937]">
-                      {currentNav ? currentNav.toFixed(4) : '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-[#9ca3af]">止损线</p>
-                    <p className="text-sm font-mono text-[#ef4444]">
-                      {target.sl.toFixed(4)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-[#9ca3af]">距止损</p>
-                    <p
-                      className={`text-sm font-mono font-medium ${
-                        distSL !== null && distSL < 5
-                          ? 'text-[#ef4444]'
-                          : 'text-[#374151]'
-                      }`}
-                    >
-                      {distSL !== null ? `${distSL.toFixed(1)}%` : '-'}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-[#9ca3af]">当前</p>
+                  <p className="font-mono text-[#4b5563]">{target.nav}</p>
                 </div>
-                <p className="text-xs text-[#f59e0b] mt-1.5">{target.riskNote}</p>
+                <div>
+                  <p className="text-[#9ca3af]">盈亏</p>
+                  <p className={`font-mono font-medium ${target.pnlColor}`}>{target.pnl}</p>
+                </div>
               </div>
-            );
-          })}
+              <p className="text-[10px] text-[#9ca3af] mt-2">{target.note}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
