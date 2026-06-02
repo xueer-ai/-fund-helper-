@@ -10,7 +10,7 @@ import { PortfolioPanel } from '@/components/portfolio-panel';
 import { LearningPanel } from '@/components/learning-panel';
 import { RiskAlertPanel } from '@/components/risk-alert-panel';
 import { CommandPanel } from '@/components/command-panel';
-import { useAutoMonitor } from '@/lib/hooks';
+import { useAutoMonitor, useFundData } from '@/lib/hooks';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
@@ -19,6 +19,9 @@ export default function Home() {
 
   // 启动工作日自动监测 + 微信推送
   useAutoMonitor();
+
+  // 基金数据（自动刷新 + 开盘前校准）
+  const { dataQuality, calibrated, lastUpdate } = useFundData();
 
   useEffect(() => {
     const update = () => {
@@ -54,6 +57,9 @@ export default function Home() {
         onCommand={handleCommand}
         currentTime={currentTime}
         isMarketDay={isMarketDay}
+        dataQuality={dataQuality}
+        calibrated={calibrated}
+        lastDataUpdate={lastUpdate}
       />
 
       {/* 免责声明条 */}

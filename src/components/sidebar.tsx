@@ -10,6 +10,9 @@ interface SidebarProps {
   onCommand: (cmd: CommandType) => void;
   currentTime: string;
   isMarketDay: boolean;
+  dataQuality?: { realtime: number; fallback: number; total: number; isStale: boolean } | null;
+  calibrated?: boolean;
+  lastDataUpdate?: string;
 }
 
 const NAV_ITEMS: { id: TabId; label: string }[] = [
@@ -21,7 +24,7 @@ const NAV_ITEMS: { id: TabId; label: string }[] = [
   { id: 'command', label: '指令' },
 ];
 
-export function Sidebar({ activeTab, onTabChange, onCommand, currentTime, isMarketDay }: SidebarProps) {
+export function Sidebar({ activeTab, onTabChange, onCommand, currentTime, isMarketDay, dataQuality, calibrated, lastDataUpdate }: SidebarProps) {
   const [cycle, setCycle] = useState<SemiAnnualCycle | null>(null);
   const [showCommands, setShowCommands] = useState(false);
   const [showPushSettings, setShowPushSettings] = useState(false);
@@ -117,6 +120,25 @@ export function Sidebar({ activeTab, onTabChange, onCommand, currentTime, isMark
           }`}>
             {isMarketDay ? '交易日' : '休市日'}
           </span>
+          {/* 数据校准状态 */}
+          {dataQuality && (
+            <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
+              dataQuality.isStale
+                ? 'bg-loss/20 text-loss'
+                : calibrated
+                  ? 'bg-profit/20 text-profit'
+                  : 'bg-gold/20 text-gold'
+            }`}>
+              {dataQuality.isStale
+                ? `数据待校准 ${dataQuality.realtime}/${dataQuality.total}`
+                : calibrated
+                  ? `已校准 ${dataQuality.realtime}/${dataQuality.total}`
+                  : `实时 ${dataQuality.realtime}/${dataQuality.total}`}
+            </span>
+          )}
+          {lastDataUpdate && (
+            <span className="text-[10px] text-muted-foreground">更新{lastDataUpdate}</span>
+          )}
           <span className="text-xs text-muted-foreground font-mono">{currentTime}</span>
 
           {/* 监测标的标签 */}

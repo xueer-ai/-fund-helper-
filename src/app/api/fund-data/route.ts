@@ -137,13 +137,28 @@ async function fetchStar50Index(): Promise<FundRealtimeData | null> {
   }
 }
 
+// 检查当前是否需要开盘前校准（工作日 9:00-9:20）
+function isPreMarketCalibration(): boolean {
+  const now = new Date();
+  const day = now.getDay();
+  if (day === 0 || day === 6) return false;
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const timeValue = hours * 100 + minutes;
+  return timeValue >= 900 && timeValue <= 920;
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const all = searchParams.get('all');
+  const calibrate = searchParams.get('calibrate'); // 强制实时校准
 
   const trading = isTradingHours();
   const workday = isWorkday();
+  const preMarket = isPreMarketCalibration();
+  // 校准模式或交易时段都获取实时数据
+  const forceRealtime = calibrate === '1' || preMarket;
 
   // 单只基金查询
   if (code) {
@@ -154,13 +169,13 @@ export async function GET(request: NextRequest) {
       if (data) return NextResponse.json(data);
     }
 
-    if (trading) {
+    if (trading || forceRealtime) {
       const data = await fetchRealtimeEstimate(actualCode);
-      if (data) return NextResponse.json(data);
+      if (data) return NextResponse.json({ ...data, calibrated: forceRealtime });
     }
 
     const data = await fetchLatestNav(actualCode);
-    if (data) return NextResponse.json(data);
+    if (data) return NextResponse.json({ ...data, calibrated: false });
 
     // 回退：返回模拟数据标记
     return NextResponse.json({
@@ -186,7 +201,7 @@ export async function GET(request: NextRequest) {
       const actualCode = FUND_CODE_MAP[key];
       let data: FundRealtimeData | null = null;
 
-      if (trading) {
+      if (trading || forceRealtime) {
         data = await fetchRealtimeEstimate(actualCode);
       }
       if (!data) {
@@ -218,10 +233,22 @@ export async function GET(request: NextRequest) {
       results.push(star50Result);
     }
 
+    // 统计数据质量
+    const realtimeCount = results.filter(r => r.source === 'realtime').length;
+    const fallbackCount = results.filter(r => r.source === 'fallback').length;
+
     return NextResponse.json({
       trading,
       workday,
+      preMarket,
+      calibrated: forceRealtime,
       updateTime: new Date().toISOString(),
+      dataQuality: {
+        realtime: realtimeCount,
+        fallback: fallbackCount,
+        total: results.length,
+        isStale: fallbackCount > realtimeCount, // 回退数据多于实时数据=数据可能过时
+      },
       funds: results,
     });
   }

@@ -2,10 +2,12 @@ name: 基金定时扫描
 
 on:
   # 工作日定时触发（UTC时间，+8换算）
-  # 09:20 北京 = 01:20 UTC
-  # 14:30 北京 = 06:30 UTC
-  # 15:05 北京 = 07:05 UTC
+  # 09:00 北京 = 01:00 UTC  — 开盘前数据校准
+  # 09:20 北京 = 01:20 UTC  — 早间学习+严选播报
+  # 14:30 北京 = 06:30 UTC  — 尾盘买点+风控扫描
+  # 15:05 北京 = 07:05 UTC  — 收盘归档
   schedule:
+    - cron: '0 1 * * 1-5'     # 工作日 09:00 开盘前数据校准
     - cron: '20 1 * * 1-5'    # 工作日 09:20 早间学习+严选
     - cron: '30 6 * * 1-5'    # 工作日 14:30 尾盘买点+风控扫描
     - cron: '5 7 * * 1-5'     # 工作日 15:05 收盘归档
@@ -16,6 +18,11 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
+      - name: 开盘前数据校准
+        if: github.event.schedule == '0 1 * * 1-5'
+        run: |
+          curl -s -m 30 "${{ secrets.APP_URL }}/api/cron?token=${{ secrets.CRON_TOKEN }}&period=morning_calibration" || true
+
       - name: 早间学习+严选播报
         if: github.event.schedule == '20 1 * * 1-5'
         run: |

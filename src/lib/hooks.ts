@@ -62,20 +62,27 @@ interface LearningData {
   knowledgeLink: string;
 }
 
-// 基金数据Hook（自动刷新）
+// 基金数据Hook（自动刷新 + 开盘前校准）
 export function useFundData(autoRefresh = true, intervalMs = 60000) {
   const [fundData, setFundData] = useState<FundRealtimeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string>('');
+  const [dataQuality, setDataQuality] = useState<{ realtime: number; fallback: number; total: number; isStale: boolean } | null>(null);
+  const [calibrated, setCalibrated] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (forceCalibrate = false) => {
     try {
-      const res = await fetch('/api/fund-data?all=1');
+      const url = forceCalibrate ? '/api/fund-data?all=1&calibrate=1' : '/api/fund-data?all=1';
+      const res = await fetch(url);
       const data = await res.json();
       if (data.funds) {
         setFundData(data.funds);
         setLastUpdate(new Date().toLocaleTimeString('zh-CN'));
+        setCalibrated(data.calibrated || false);
+        if (data.dataQuality) {
+          setDataQuality(data.dataQuality);
+        }
       }
     } catch {
       // 静默失败，保留上次数据
@@ -85,16 +92,33 @@ export function useFundData(autoRefresh = true, intervalMs = 60000) {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    // 判断当前是否在开盘前校准时段（9:00-9:20 工作日）
+    const now = new Date();
+    const day = now.getDay();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const timeValue = hours * 100 + minutes;
+    const isPreMarket = day !== 0 && day !== 6 && timeValue >= 900 && timeValue <= 920;
+
+    // 开盘前时段强制校准
+    fetchData(isPreMarket);
+
     if (autoRefresh) {
-      timerRef.current = setInterval(fetchData, intervalMs);
+      timerRef.current = setInterval(() => {
+        // 每次刷新也检查是否在开盘前时段
+        const n = new Date();
+        const d = n.getDay();
+        const tv = n.getHours() * 100 + n.getMinutes();
+        const preMarket = d !== 0 && d !== 6 && tv >= 900 && tv <= 920;
+        fetchData(preMarket);
+      }, intervalMs);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [fetchData, autoRefresh, intervalMs]);
 
-  return { fundData, loading, lastUpdate, refresh: fetchData };
+  return { fundData, loading, lastUpdate, dataQuality, calibrated, refresh: fetchData };
 }
 
 // 扫描结果Hook

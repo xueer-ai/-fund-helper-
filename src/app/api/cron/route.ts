@@ -74,8 +74,55 @@ export async function GET(request: NextRequest) {
   // ========== 根据时段执行不同任务 ==========
   const period = overridePeriod || '';
 
+  // 09:00-09:20 开盘前数据校准（最优先！确保数据与大盘一致）
+  if (period === 'morning_calibration' || (timeSlot >= 540 && timeSlot <= 560)) {
+    results.period = 'morning_calibration';
+    try {
+      // 强制实时拉取全部基金数据（calibrate=1）
+      const dataRes = await fetch(`${baseUrl}/api/fund-data?all=1&calibrate=1`, {
+        signal: AbortSignal.timeout(30000),
+      });
+      const dataData = await dataRes.json();
+      const quality = dataData.dataQuality || {};
+      results.scanResult = {
+        totalFunds: quality.total || 0,
+        realtimeCount: quality.realtime || 0,
+        fallbackCount: quality.fallback || 0,
+        isStale: quality.isStale || false,
+        updateTime: dataData.updateTime || '',
+      };
+
+      // 如果数据过时，推送校准异常通知
+      if (quality.isStale) {
+        const alertPayload = buildPushPayload({
+          type: 'daily_summary',
+          data: {
+            date: now.toLocaleDateString('zh-CN'),
+            signals: 0,
+            alerts: 1,
+          },
+        });
+        if (alertPayload) {
+          try {
+            await fetch(`${baseUrl}/api/push`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(alertPayload),
+              signal: AbortSignal.timeout(10000),
+            });
+            results.pushResults.push({ type: 'calibration_alert', success: true, message: '数据校准异常已推送' });
+          } catch {
+            results.pushResults.push({ type: 'calibration_alert', success: false, message: '校准异常推送失败' });
+          }
+        }
+      }
+    } catch {
+      results.scanResult = { error: '开盘前数据校准失败' };
+    }
+  }
+
   // 09:20 早间学习（09:15-09:25）
-  if (period === 'morning_learning' || timeSlot >= 555 && timeSlot <= 565) {
+  else if (period === 'morning_learning' || timeSlot >= 555 && timeSlot <= 565) {
     results.period = 'morning_learning';
     try {
       const res = await fetch(`${baseUrl}/api/scheduler?action=morning_learning`, {
