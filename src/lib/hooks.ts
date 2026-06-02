@@ -104,17 +104,28 @@ export function useFundData(autoRefresh = true, intervalMs = 60000) {
     fetchData(isPreMarket);
 
     if (autoRefresh) {
-      timerRef.current = setInterval(() => {
-        // 每次刷新也检查是否在开盘前时段
+      // 开盘前校准时段(9:00-9:20)每10秒刷新，其余时段按配置间隔
+      const getInterval = () => {
+        const n = new Date();
+        const d = n.getDay();
+        const tv = n.getHours() * 100 + n.getMinutes();
+        const preMarket = d !== 0 && d !== 6 && tv >= 900 && tv <= 920;
+        return preMarket ? 10000 : intervalMs; // 校准时段10秒，平时60秒
+      };
+
+      // 动态间隔刷新
+      const dynamicRefresh = () => {
         const n = new Date();
         const d = n.getDay();
         const tv = n.getHours() * 100 + n.getMinutes();
         const preMarket = d !== 0 && d !== 6 && tv >= 900 && tv <= 920;
         fetchData(preMarket);
-      }, intervalMs);
+        timerRef.current = setTimeout(dynamicRefresh, getInterval()) as unknown as ReturnType<typeof setInterval>;
+      };
+      timerRef.current = setTimeout(dynamicRefresh, getInterval()) as unknown as ReturnType<typeof setInterval>;
     }
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current as unknown as ReturnType<typeof setTimeout>);
     };
   }, [fetchData, autoRefresh, intervalMs]);
 
@@ -333,6 +344,13 @@ export function useAutoMonitor() {
               }
             }
           }
+        } catch { /* ignore */ }
+      }
+
+      // 09:00 开盘前数据校准
+      if (hours === 9 && minutes === 0) {
+        try {
+          await fetch('/api/cron?token=yuange2026&period=morning_calibration');
         } catch { /* ignore */ }
       }
 

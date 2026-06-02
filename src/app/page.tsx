@@ -90,10 +90,11 @@ export default function HomePage() {
               11月止损<span className="font-mono font-medium text-[#1f2937]">{daysToStopLoss}</span>天
             </span>
             <span className="text-xs text-[#6b7280]">
-              待校准
-              <span className={`font-mono font-medium ${dataQuality && !dataQuality.isStale ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
-                {dataQuality ? `${dataQuality.fallback}/${dataQuality.total}` : '0/7'}
-              </span>
+              {dataQuality && !dataQuality.isStale ? (
+                <>已校准<span className="font-mono font-medium text-[#10b981]">{dataQuality.realtime}/{dataQuality.total}</span></>
+              ) : (
+                <>待校准<span className="font-mono font-medium text-[#ef4444]">{dataQuality ? dataQuality.fallback : '?'}/{dataQuality?.total || 7}</span></>
+              )}
             </span>
           </div>
           <span className="text-xs text-[#9ca3af] font-mono">{now}</span>

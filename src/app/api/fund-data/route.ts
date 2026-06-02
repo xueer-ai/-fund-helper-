@@ -169,11 +169,24 @@ export async function GET(request: NextRequest) {
       if (data) return NextResponse.json(data);
     }
 
-    if (trading || forceRealtime) {
-      const data = await fetchRealtimeEstimate(actualCode);
-      if (data) return NextResponse.json({ ...data, calibrated: forceRealtime });
+    // 校准模式：强制获取最新收盘净值（非估算），确保与前一交易日收盘一致
+    if (forceRealtime || calibrate === '1') {
+      const latestData = await fetchLatestNav(actualCode);
+      if (latestData) {
+        return NextResponse.json({ ...latestData, calibrated: true, calibrationMode: 'pre_market' });
+      }
+      // 收盘净值也获取失败时，再尝试实时估算
+      const estData = await fetchRealtimeEstimate(actualCode);
+      if (estData) return NextResponse.json({ ...estData, calibrated: true, calibrationMode: 'estimate_fallback' });
     }
 
+    // 交易时段：优先获取实时估算
+    if (trading) {
+      const data = await fetchRealtimeEstimate(actualCode);
+      if (data) return NextResponse.json({ ...data, calibrated: false });
+    }
+
+    // 非交易时段：获取最新收盘净值
     const data = await fetchLatestNav(actualCode);
     if (data) return NextResponse.json({ ...data, calibrated: false });
 
@@ -201,7 +214,21 @@ export async function GET(request: NextRequest) {
       const actualCode = FUND_CODE_MAP[key];
       let data: FundRealtimeData | null = null;
 
-      if (trading || forceRealtime) {
+      // 校准模式：优先获取最新收盘净值（确保与前一交易日收盘一致）
+      if (forceRealtime || calibrate === '1') {
+        data = await fetchLatestNav(actualCode);
+        if (data) {
+          return { ...data, calibrated: true, calibrationMode: 'pre_market' } as FundRealtimeData;
+        }
+        // 收盘净值获取失败时，再尝试实时估算
+        data = await fetchRealtimeEstimate(actualCode);
+        if (data) {
+          return { ...data, calibrated: true, calibrationMode: 'estimate_fallback' } as FundRealtimeData;
+        }
+      }
+
+      // 交易时段：优先获取实时估算
+      if (trading) {
         data = await fetchRealtimeEstimate(actualCode);
       }
       if (!data) {

@@ -84,22 +84,39 @@ export async function GET(request: NextRequest) {
       });
       const dataData = await dataRes.json();
       const quality = dataData.dataQuality || {};
+      // 验证数据一致性
+      const isCalibrated = !quality.isStale && (quality.realtime || 0) >= (quality.total || 0);
       results.scanResult = {
         totalFunds: quality.total || 0,
         realtimeCount: quality.realtime || 0,
         fallbackCount: quality.fallback || 0,
         isStale: quality.isStale || false,
         updateTime: dataData.updateTime || '',
+        calibrated: isCalibrated,
+        message: isCalibrated
+          ? `数据校准通过：${quality.realtime || 0}/${quality.total || 0}只基金已更新至前一交易日收盘`
+          : `数据校准异常：仅${quality.realtime || 0}/${quality.total || 0}只基金获取到最新数据`,
       };
 
+      // 同时扫描买点信号和风控预警（开盘前预检）
+      try {
+        const scanRes = await fetch(`${baseUrl}/api/scan?type=all&autopush=0`, {
+          signal: AbortSignal.timeout(20000),
+        });
+        const scanData = await scanRes.json();
+        results.scanResult.signals = scanData.signals?.length || 0;
+        results.scanResult.alerts = scanData.alerts?.length || 0;
+      } catch { /* 扫描失败不影响校准 */ }
+
       // 如果数据过时，推送校准异常通知
-      if (quality.isStale) {
+      if (quality.isStale || !isCalibrated) {
         const alertPayload = buildPushPayload({
           type: 'daily_summary',
           data: {
             date: now.toLocaleDateString('zh-CN'),
             signals: 0,
             alerts: 1,
+            message: `开盘前数据校准异常：仅${quality.realtime || 0}/${quality.total || 0}只基金获取到前一交易日收盘数据，请手动核查`,
           },
         });
         if (alertPayload) {
