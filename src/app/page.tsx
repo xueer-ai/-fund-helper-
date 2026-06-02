@@ -37,6 +37,32 @@ export default function HomePage() {
 
   const isWorkday = new Date().getDay() >= 1 && new Date().getDay() <= 5;
 
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushSuccess, setPushSuccess] = useState(false);
+
+  const handlePushWechat = async () => {
+    setPushLoading(true);
+    setPushSuccess(false);
+    try {
+      const res = await fetch('/api/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'test', title: '基金监控助手推送测试', content: '如果您看到此消息，说明微信推送已成功连接！' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPushSuccess(true);
+        setTimeout(() => setPushSuccess(false), 3000);
+      } else {
+        alert(data.error || '推送失败，请检查推送Token配置');
+      }
+    } catch {
+      alert('推送请求失败，请检查网络连接');
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
   const daysToNationalDay = Math.max(
     0,
     Math.ceil((new Date('2026-10-01').getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -47,7 +73,7 @@ export default function HomePage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa]">
+    <div className="h-screen flex flex-col bg-[#f5f6fa] overflow-hidden">
       {/* ===== 顶栏：红色标题 + 标签 + 倒计时 + 校准 + 时间 ===== */}
       <header className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb]">
         <div className="flex items-center justify-between px-5 h-11">
@@ -121,14 +147,24 @@ export default function HomePage() {
             <span className="text-[#dc2626] font-bold">◆</span> 涨幅领先板块名称: <span className="font-mono font-medium text-[#10b981]">--</span>
           </span>
           <div className="flex-1" />
-          <button className="text-xs px-3 py-1 rounded bg-[#10b981] text-white font-medium hover:bg-[#059669]">
-            推送微信
+          <button
+            onClick={handlePushWechat}
+            disabled={pushLoading}
+            className={`text-xs px-3 py-1 rounded font-medium transition-colors ${
+              pushLoading
+                ? 'bg-[#d1d5db] text-white cursor-not-allowed'
+                : pushSuccess
+                  ? 'bg-[#10b981] text-white'
+                  : 'bg-[#10b981] text-white hover:bg-[#059669]'
+            }`}
+          >
+            {pushLoading ? '推送中...' : pushSuccess ? '已推送' : '推送微信'}
           </button>
         </div>
       </div>
 
-      {/* ===== 功能标签页内容区 ===== */}
-      <div className="px-5 py-3">
+      {/* ===== 功能标签页内容区（带滚动条）===== */}
+      <div className="px-5 py-3 flex-1 overflow-y-auto custom-scrollbar">
         {activeTab === 'overview' && (
           <DashboardOverview funds={funds} loading={loading} />
         )}
